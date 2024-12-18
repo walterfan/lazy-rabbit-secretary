@@ -11,7 +11,7 @@
     </parent>
     
     <groupId>com.example</groupId>
-    <artifactId>book-management</artifactId>
+    <artifactId>lazy-rabbit-reminder</artifactId>
     <version>1.0.0</version>
     
     <properties>
