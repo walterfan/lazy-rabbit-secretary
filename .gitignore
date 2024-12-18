@@ -1,5 +1,6 @@
 .idea/
 target/
+.settings/
 # Compiled class file
 *.class
 .env
@@ -50,3 +51,7 @@ gradle-app.setting
 hs_err_pid*
 replay_pid*
 .vscode/
+build/
+.gradle/
+.idea/
+.env
