@@ -1,7 +1,7 @@
 `<template>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-      <router-link class="navbar-brand" to="/">Management App</router-link>
+      <router-link class="navbar-brand" to="/">Lazy Rabbit Memo</router-link>
       <button
         class="navbar-toggler"
         type="button"
@@ -12,6 +12,9 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
+          <li class="nav-item">
+            <router-link class="nav-link" to="/home">Home</router-link>
+          </li>
           <li class="nav-item">
             <router-link class="nav-link" to="/books">Books</router-link>
           </li>

@@ -3,6 +3,7 @@ export interface Book {
   title: string;
   author: string;
   price: number;
+  borrower: string;
   borrowTime?: Date;
   returnTime?: Date;
 }

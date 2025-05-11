@@ -4,9 +4,9 @@ target/
 # Compiled class file
 *.class
 .env
-
+walter-config.yml
 # gradle
-
+node_modules/
 .gradle
 **/build/
 !src/**/build/

@@ -1,7 +1,0 @@
-# 全局配置
-server:
-  port: 9030
-
-spring:
-  profiles:
-    active: test

@@ -1,19 +1,5 @@
 `<template>
   <form @submit.prevent="handleSubmit" class="needs-validation" novalidate>
-    <div class="mb-3">
-      <label for="isbn" class="form-label">ISBN</label>
-      <input
-        type="text"
-        class="form-control"
-        id="isbn"
-        v-model="bookData.isbn"
-        :class="{ 'is-invalid': v$.isbn.$error }"
-        required
-      />
-      <div class="invalid-feedback" v-if="v$.isbn.$error">
-        {{ v$.isbn.$errors[0].$message }}
-      </div>
-    </div>
 
     <div class="mb-3">
       <label for="title" class="form-label">Title</label>
@@ -46,6 +32,21 @@
     </div>
 
     <div class="mb-3">
+      <label for="isbn" class="form-label">ISBN</label>
+      <input
+        type="text"
+        class="form-control"
+        id="isbn"
+        v-model="bookData.isbn"
+        :class="{ 'is-invalid': v$.isbn.$error }"
+        required
+      />
+      <div class="invalid-feedback" v-if="v$.isbn.$error">
+        {{ v$.isbn.$errors[0].$message }}
+      </div>
+    </div>
+
+    <div class="mb-3">
       <label for="price" class="form-label">Price</label>
       <input
         type="number"
@@ -58,6 +59,18 @@
       <div class="invalid-feedback" v-if="v$.price.$error">
         {{ v$.price.$errors[0].$message }}
       </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="borrower" class="form-label">Borrower</label>
+      <input
+        type="text"
+        class="form-control"
+        id="borrower"
+        v-model="bookData.borrower"
+
+      />
+
     </div>
 
     <div class="mb-3">
@@ -108,6 +121,7 @@ const bookData = ref<Book>({
   title: '',
   author: '',
   price: 0,
+  borrower: '',
   borrowTime: undefined,
   returnTime: undefined,
 });

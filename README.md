@@ -13,6 +13,15 @@ This is still work in progress...
 
 ```
 
+or
+
+```shell
+
+mvn archetype:generate -DgroupId=com.fanyamin -DartifactId=reminder-client -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+
+```
+
 ## run and test
 * start it
 ```shell

@@ -14,6 +14,7 @@
             <th>Title</th>
             <th>Author</th>
             <th>Price</th>
+            <th>Borrower</th>
             <th>Borrow Time</th>
             <th>Return Time</th>
             <th>Actions</th>
@@ -25,6 +26,7 @@
             <td>{{ book.title }}</td>
             <td>{{ book.author }}</td>
             <td>{{ formatPrice(book.price) }}</td>
+            <td>{{ book.borrower }}</td>
             <td>{{ formatDate(book.borrowTime) }}</td>
             <td>{{ formatDate(book.returnTime) }}</td>
             <td>
