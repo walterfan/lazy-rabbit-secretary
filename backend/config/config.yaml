@@ -12,6 +12,15 @@ static_routes:
   private:
     - path: "/diary"
       dir: "../doc/build/html"
+commands:
+  - name: "make_calendar"
+    desc: "make a calendar"
+  - name: "draw_mindmap"
+    desc: "draw a mindmap"
+  - name: "ask_question"
+    desc: "ask a question"
+  - name: "write_blog"
+    desc: "write a blog"
 tasks:
   - name: "Task 1"
     schedule: "0 */5 * * * *"  # Every 5 minutes
@@ -22,6 +31,3 @@ tasks:
   - name: "Task 3"
     schedule: "0 * * * * *"  # Every 1 minute
     function: "check(https://www.fanyamin.com)"
-auth:
-  username: "walter"
-  password: "password"

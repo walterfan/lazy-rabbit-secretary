@@ -17,9 +17,9 @@
           <div class="mb-3">
             <label for="selectOption" class="form-label">Command</label>
             <select id="selectOption" v-model="formData.selectedOption" class="form-select">
-              <option value="option1">Option 1</option>
-              <option value="option2">Option 2</option>
-              <option value="option3">Option 3</option>
+              <option v-for="cmd in commands" :key="cmd.name" :value="cmd.name">
+                {{ cmd.name }} — {{ cmd.desc }}
+              </option>
             </select>
           </div>
 
@@ -48,14 +48,13 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
 // Form data model
 const formData = ref({
   inputText: '',
-  selectedOption: 'option1',
+  selectedOption: '',
   additionalNotes: ''
 });
 
@@ -65,10 +64,13 @@ const outputResponse = ref('');
 // News prompt from API
 const newsPrompt = ref<string | null>(null);
 
+const commands = ref<{ name: string; desc: string }[]>([]);
 // Simulated API call to fetch news prompt
 const fetchNewsPrompt = async () => {
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+
   try {
-    const response = await fetch('https://api.example.com/news'); // Replace with your actual API endpoint
+    const response = await fetch(`${apiBase}/news`); // Replace with your actual API endpoint
     const data = await response.json();
     newsPrompt.value = data.message || 'Welcome to our service!';
   } catch (error) {
@@ -77,10 +79,25 @@ const fetchNewsPrompt = async () => {
   }
 };
 
+const fetchCommands = async () => {
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+
+  try {
+    const response = await fetch(`${apiBase}/api/v1/commands`);
+    const data = await response.json();
+
+    // Assuming the response is { commands: [...] }
+    commands.value = data.commands || [];
+  } catch (error) {
+    console.error('Failed to fetch commands:', error);
+  }
+};
+
 // Simulated POST request to backend
 const handleSubmit = async () => {
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
   try {
-    const response = await fetch('https://api.example.com/submit', {
+    const response = await fetch(`${apiBase}/api/v1/commands`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -99,5 +116,6 @@ const handleSubmit = async () => {
 // Fetch news prompt when component mounts
 onMounted(() => {
   fetchNewsPrompt();
+  fetchCommands();
 });
 </script>

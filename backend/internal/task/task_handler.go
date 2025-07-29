@@ -1,11 +1,11 @@
 package task
 
 type TaskHandler interface {
-    Execute() error
+	Execute(params string) error
 }
 
-var taskHandlers = make(map[string]func() TaskHandler)
+var taskHandlers = make(map[string]TaskHandler)
 
-func RegisterTaskHandler(name string, handlerFunc func() TaskHandler) {
-    taskHandlers[name] = handlerFunc
+func RegisterTaskHandler(name string, taskHandler TaskHandler) {
+	taskHandlers[name] = taskHandler
 }

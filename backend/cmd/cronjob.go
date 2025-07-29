@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/walterfan/lazy-rabbit-memo/internal/task"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
 )
 
 var cronjob = &cobra.Command{

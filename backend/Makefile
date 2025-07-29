@@ -1,5 +1,5 @@
 # Define variables
-PROJECT_NAME := lazy-rabbit-memo
+PROJECT_NAME := lazy-rabbit-reminder
 BINARY_NAME := $(PROJECT_NAME)
 GO := go
 GOFLAGS := -ldflags="-s -w"
@@ -21,6 +21,9 @@ run:
 	@echo "Running the project..."
 	@$(GO) run $(GOFLAGS) main.go
 
+execute:
+	@echo "Execute the project..."
+	./lazy-rabbit-reminder serve --config ./config/walter-config.yml
 # Test the project
 test:
 	@echo "Running tests..."

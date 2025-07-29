@@ -3,22 +3,16 @@ package task
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
-	"gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
-
-var ctx = context.Background()
-var rdb *redis.Client
 
 // Define a Task structure with the 'function' and 'command' fields
 type Task struct {
@@ -36,18 +30,27 @@ type Config struct {
 // TaskManager struct to encapsulate task-related functions
 type TaskManager struct {
 	config *Config
+	logger *zap.SugaredLogger
+	ctx    context.Context
+	rdb    *redis.Client
+}
+
+func NewTaskManager(logger *zap.Logger, redisClient *redis.Client) *TaskManager {
+
+	return &TaskManager{
+		config: nil,
+		logger: logger.Sugar(),
+		ctx:    context.Background(),
+		rdb:    redisClient,
+	}
 }
 
 // Load configuration from the YAML file
-func (tm *TaskManager) loadConfig(path string) error {
-	file, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
+func (tm *TaskManager) loadConfig() error {
 
 	var config Config
-	if err := yaml.Unmarshal(file, &config); err != nil {
-		return err
+	if err := viper.Unmarshal(&config); err != nil {
+		panic(fmt.Errorf("unable to decode into struct: %w", err))
 	}
 
 	tm.config = &config
@@ -59,12 +62,12 @@ func (tm *TaskManager) check(url string) {
 	// Perform a basic HTTP GET request to check if the URL is reachable
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("Error checking URL %s: %v", url, err)
+		tm.logger.Infof("Error checking URL %s: %v", url, err)
 		return
 	}
 	defer resp.Body.Close()
 
-	log.Printf("Checked URL %s with status code: %d", url, resp.StatusCode)
+	tm.logger.Infof("Checked URL %s with status code: %d", url, resp.StatusCode)
 }
 
 // Function to execute a command in the shell
@@ -73,9 +76,9 @@ func (tm *TaskManager) executeCommand(command string) {
 	cmd := exec.Command("sh", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Error executing command '%s': %v", command, err)
+		tm.logger.Infof("Error executing command '%s': %v", command, err)
 	}
-	log.Printf("Output of command '%s': %s", command, string(output))
+	tm.logger.Infof("Output of command '%s': %s", command, string(output))
 }
 
 // Function to map the function name to the actual Go function
@@ -83,31 +86,30 @@ func (tm *TaskManager) executeFunction(functionName, param string) {
 	// Remove the "()" from the function name
 	functionName = strings.TrimSuffix(functionName, "()")
 
-	log.Printf("Executing function '%s' with parameter '%s'", functionName, param)
+	tm.logger.Infof("Executing function '%s' with parameter '%s'", functionName, param)
 	// Map the function name to the corresponding function
 	if functionName == "check" {
 		tm.check(param)
 	} else if functionName == "executeCommand" {
 		tm.executeCommand(param)
 	} else {
-		log.Printf("No predefined function: %s", functionName)
+		tm.logger.Infof("No predefined function: %s", functionName)
 	}
 
-	handlerFunc, exists := taskHandlers[functionName]
+	handler, exists := taskHandlers[functionName]
 	if !exists {
-		log.Printf("No plugin found for: %s", functionName)
+		tm.logger.Infof("No plugin found for: %s", functionName)
 		return
 	}
 
-	handler := handlerFunc()
-	if err := handler.Execute(); err != nil {
-		log.Printf("Error executing plugin %s: %v", functionName, err)
+	if err := handler.Execute(param); err != nil {
+		tm.logger.Infof("Error executing plugin %s: %v", functionName, err)
 	}
 }
 
 // Read unfinished tasks from Redis
 func (tm *TaskManager) readUnfinishedTasks() ([]string, error) {
-	keys, err := rdb.Keys(ctx, "task:*").Result()
+	keys, err := tm.rdb.Keys(tm.ctx, "task:*").Result()
 	if err != nil {
 		return nil, err
 	}
@@ -116,31 +118,31 @@ func (tm *TaskManager) readUnfinishedTasks() ([]string, error) {
 
 // Publish task expiry event to Redis
 func (tm *TaskManager) publishTaskExpiryEvent(taskID string) error {
-	return rdb.Publish(ctx, "task_expiry_channel", taskID).Err()
+	return tm.rdb.Publish(tm.ctx, "task_expiry_channel", taskID).Err()
 }
 
 // Check task expiry and publish events
 func (tm *TaskManager) checkTaskExpiry() {
 	tasks, err := tm.readUnfinishedTasks()
 	if err != nil {
-		log.Printf("Failed to read unfinished tasks: %v", err)
+		tm.logger.Infof("Failed to read unfinished tasks: %v", err)
 		return
 	}
 
 	for _, taskKey := range tasks {
 		// Assume task expiration time is stored in Redis with key "task:<taskID>:expiry"
-		expiryTime, err := rdb.Get(ctx, taskKey).Int64()
+		expiryTime, err := tm.rdb.Get(tm.ctx, taskKey).Int64()
 		if err != nil {
-			log.Printf("Failed to get expiry time for task %s: %v", taskKey, err)
+			tm.logger.Infof("Failed to get expiry time for task %s: %v", taskKey, err)
 			continue
 		}
 
-		log.Printf("task %s expiry time is %d vs. %d", taskKey, expiryTime, time.Now().Unix())
+		tm.logger.Infof("task %s expiry time is %d vs. %d", taskKey, expiryTime, time.Now().Unix())
 
 		if time.Now().Unix() >= expiryTime {
 			taskID := strings.TrimPrefix(taskKey, "task:")
 			if err := tm.publishTaskExpiryEvent(taskID); err != nil {
-				log.Printf("Failed to publish expiry event for task %s: %v", taskID, err)
+				tm.logger.Infof("Failed to publish expiry event for task %s: %v", taskID, err)
 			}
 		}
 	}
@@ -149,8 +151,8 @@ func (tm *TaskManager) checkTaskExpiry() {
 // Check tasks and set expiry times
 func (tm *TaskManager) CheckTasks() {
 	// Load configuration from the YAML file
-	if err := tm.loadConfig("cron-config.yml"); err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	if err := tm.loadConfig(); err != nil {
+		tm.logger.Fatalf("Failed to load config: %v", err)
 	}
 
 	// Initialize the cron job scheduler
@@ -184,9 +186,9 @@ func (tm *TaskManager) CheckTasks() {
 			}(functionName, param))
 
 			if err != nil {
-				log.Printf("Failed to add task %s: %v", task.Name, err)
+				tm.logger.Infof("Failed to add task %s: %v", task.Name, err)
 			} else {
-				log.Printf("Scheduled function task %s with schedule %s", task.Name, task.Schedule)
+				tm.logger.Infof("Scheduled function task %s with schedule %s", task.Name, task.Schedule)
 			}
 		}
 
@@ -200,9 +202,9 @@ func (tm *TaskManager) CheckTasks() {
 			}(task.Function, task.Parameters))
 
 			if err != nil {
-				log.Printf("Failed to add task %s: %v", task.Name, err)
+				tm.logger.Infof("Failed to add task %s: %v", task.Name, err)
 			} else {
-				log.Printf("Scheduled command task %s with schedule %s", task.Name, task.Schedule)
+				tm.logger.Infof("Scheduled command task %s with schedule %s", task.Name, task.Schedule)
 			}
 		}
 
@@ -210,7 +212,7 @@ func (tm *TaskManager) CheckTasks() {
 			// Parse the deadline string to a time.Time object
 			deadlineTime, err := time.Parse(time.RFC3339, task.Deadline)
 			if err != nil {
-				log.Printf("Failed to parse deadline for task %s: %v", task.Name, err)
+				tm.logger.Infof("Failed to parse deadline for task %s: %v", task.Name, err)
 				continue
 			}
 
@@ -221,46 +223,25 @@ func (tm *TaskManager) CheckTasks() {
 			key := fmt.Sprintf("task:%s:expiry", task.Name)
 			key = strings.ReplaceAll(key, " ", "_")
 
-			err = rdb.Set(ctx, key, expiryTime, 0).Err()
+			err = tm.rdb.Set(tm.ctx, key, expiryTime, 0).Err()
 			if err != nil {
-				log.Printf("Failed to set expiry time for task %s: %v", task.Name, err)
+				tm.logger.Infof("Failed to set expiry time for task %s: %v", task.Name, err)
 				continue
 			}
 
-			log.Printf("Set expiry time for task %s: %d", task.Name, expiryTime)
+			tm.logger.Infof("Set expiry time for task %s: %d", task.Name, expiryTime)
 		}
 	}
 
 	// Add the task expiry check cron job
 	_, err := c.AddFunc("@every 1m", tm.checkTaskExpiry)
 	if err != nil {
-		log.Fatalf("Failed to add task expiry check cron job: %v", err)
+		tm.logger.Fatalf("Failed to add task expiry check cron job: %v", err)
 	} else {
-		log.Println("Scheduled task expiry check cron job")
+		tm.logger.Infof("Scheduled task expiry check cron job")
 	}
 
 	// Start the cron scheduler
 	c.Start()
 
-	// Run indefinitely
-	select {}
-}
-
-func init() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	// Get Redis host and password from environment variables
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-
-	// Initialize the Redis client
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     redisHost,
-		Password: redisPassword,
-		DB:       0, // Use default DB
-	})
 }
