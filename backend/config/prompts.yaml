@@ -1,0 +1,1302 @@
+prompts:
+  summarize:
+    description: "summarize the given code by uml diagram and mindmap diagram"
+    system_prompt: "You are an expert in {{language}} and a professional code summarizer."
+    user_prompt: |
+      Please summarize the following code, and generate UML class diagram and mindmap diagram script as plantuml format:
+      ------
+      it is the UML diagram format
+      ```plantuml
+      @startuml
+      ...
+      @enduml
+      ```
+      ------
+      the mindmap syntax is compatible with OrgMode like below
+      ```plantuml
+      @startmindmap
+      * Debian
+      ** Ubuntu
+      *** Linux Mint
+      *** Kubuntu
+      *** Lubuntu
+      *** KDE Neon
+      ** LMDE
+      ** SolydXK
+      ** SteamOS
+      ** Raspbian
+      @endmindmap
+      ```
+      ------
+      It is the code you need to summarize:
+      ```
+      {{code}}
+      ```
+    tags: code
+  explain_code:
+    description: "explain the given code"
+    system_prompt: "You are an expert in {{language}} and a professional code explainer."
+    user_prompt: |
+      Please explain the following code to let me understand the logic and tech details,
+      and generate mindmap diagram script as plantuml format:
+      ------
+      the mindmap syntax is compatible with OrgMode like below
+      ```plantuml
+      @startmindmap
+      * Debian
+      ** Ubuntu
+      *** Linux Mint
+      *** Kubuntu
+      *** Lubuntu
+      *** KDE Neon
+      ** LMDE
+      ** SolydXK
+      ** SteamOS
+      ** Raspbian
+      @endmindmap
+      ```
+      ------
+      It is the code you need to explain:
+      ```
+      {{code}}
+      ```
+    tags: code
+  explain_article:
+    description: "explain the given article"
+    system_prompt: "You are an expert in software development and security domain."
+    user_prompt: |
+      Please explain the following article, , and generate UML class diagram and mindmap diagram script as plantuml format:
+      ------
+      it is the UML diagram format
+      ```plantuml
+      @startuml
+      ...
+      @enduml
+      ```
+      ------
+      the mindmap syntax is compatible with OrgMode like below
+      ```plantuml
+      @startmindmap
+      * Debian
+      ** Ubuntu
+      *** Linux Mint
+      *** Kubuntu
+      *** Lubuntu
+      *** KDE Neon
+      ** LMDE
+      ** SolydXK
+      ** SteamOS
+      ** Raspbian
+      @endmindmap
+      ```
+      ------
+      It is the article you need to explain:
+      ------
+      {{code}}
+    tags: code
+  review_code:
+    description: "review code and give suggestions"
+    system_prompt: "You are a software engineer and expert in {{language}}."
+    user_prompt: |
+      Review the following source code and suggest improvements, bug fixes, and style corrections:
+      ```
+      {{code}}
+      ```
+    tags: code
+
+  review_mr:
+    description: "review merge request and give suggestions"
+    system_prompt: "You are a software engineer and expert in {{language}}."
+    user_prompt: |
+      Review the following code change of merge request and suggest improvements, bug fixes, and style corrections:
+
+      {{code}}
+
+
+    tags: code
+
+  refactor:
+    description: "refactor code and give suggestion"
+    system_prompt: "You are a {{language}} expert."
+    user_prompt: |
+      Refactor the following code to be more idiomatic and readable.
+      Output only the updated code:
+
+      ```
+      {{code}}
+      ```
+    tags: code
+
+  unit_test:
+    description: "write unit tests"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please write unit tests for the following code including positive and negative cases.
+
+      ```
+      {{code}}
+      ```
+    tags: test
+
+  write_function:
+    description: "write a function"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please write a {{function_name}} function to {{function_desc}}. It accepts {{input_parameters}} and returns {{output_result}}
+    tags: code, write
+
+  translate_en:
+    description: "Translate text"
+    system_prompt: "You are a professional translator."
+    user_prompt: |
+      Please translate the following text from English to Chinese while preserving the original tone and meaning.
+    tags: translate
+
+
+  code_review_general:
+    description: "Code review general"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a comprehensive code review focusing on:
+
+      1. Code structure and organization
+      2. Readability and maintainability
+      3. Suggestions for improvement
+
+      Please provide specific, actionable feedback.
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  code_review_security:
+    description: "Code review security"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a security-focused code review focusing on:
+
+      Perform a security-focused code review looking for:
+      1. Security vulnerabilities
+      2. Input validation issues
+      3. Authentication and authorization flaws
+      4. Data exposure risks
+      5. Injection attacks possibilities
+
+      Rate the severity of any issues found (LOW, MEDIUM, HIGH, CRITICAL).
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  code_review_performance:
+    description: "Code review performance"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a performance-focused code review focusing on:
+
+      Analyze the code for performance issues:
+      1. Algorithmic complexity
+      2. Memory usage
+      3. Resource management
+      4. Optimization opportunities
+      5. Bottlenecks
+
+      Provide specific performance improvement suggestions.
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  code_review_best_practices:
+    description: "Code review best practices"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a best practices-focused code review focusing on:
+
+      Review the code against best practices:
+      1. Code style and conventions
+      2. Design patterns usage
+      3. Error handling
+      4. Documentation
+      5. Testing considerations
+
+      Suggest improvements to follow best practices.
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  code_review_bug_detection:
+    description: "Code review bug detection"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a bug detection-focused code review focusing on:
+
+      Focus on finding potential bugs:
+      1. Logic errors
+      2. Edge cases not handled
+      3. Null pointer exceptions
+      4. Race conditions
+      5. Off-by-one errors
+
+      Explain each potential bug and how to fix it.
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  code_review_code_quality:
+    description: "Code review code quality"
+    system_prompt: "You are an expert in {{language}}"
+    tags: code, review
+    user_prompt: |
+      please review the following {{language}} code, and provide a code quality-focused code review focusing on:
+
+      Assess code quality focusing on:
+      1. Code complexity
+      2. Maintainability
+      3. Testability
+      4. Reusability
+      5. Documentation quality
+
+      Provide a quality score and improvement recommendations.
+
+      It is the code you need to review:
+      ```
+      {{code}}
+      ```
+
+  java_performance_optimization:
+    description: "Suggest strategies for optimizing Java code for improved performance, including using bytecode optimization and efficient memory management techniques."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for optimizing Java code for improved performance, including using bytecode optimization and efficient memory management techniques.
+
+      Consider the following aspects:
+      1. JVM tuning and optimization
+      2. Memory management best practices
+      3. Bytecode optimization techniques
+      4. Performance profiling and monitoring
+      5. Code-level optimizations
+
+      Provide specific, actionable recommendations with examples.
+
+  java_concurrency_principles:
+    description: "Explain the principles of Java concurrency and suggest ways to use concurrency techniques for improved code performance and scalability."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the principles of Java concurrency and suggest ways to use concurrency techniques for improved code performance and scalability.
+
+      Cover the following topics:
+      1. Thread management and lifecycle
+      2. Synchronization mechanisms
+      3. Concurrent collections
+      4. Executor framework
+      5. CompletableFuture and async programming
+      6. Best practices for thread safety
+
+      Provide practical examples and code snippets.
+
+  java_security_optimization:
+    description: "Suggest ways to optimize Java code for improved website or application security, including using secure coding practices and implementing input validation."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application security, including using secure coding practices and implementing input validation.
+
+      Focus on:
+      1. Input validation and sanitization
+      2. Authentication and authorization
+      3. Secure communication protocols
+      4. Data encryption and protection
+      5. Common security vulnerabilities prevention
+      6. Security testing and auditing
+
+      Provide code examples and security best practices.
+
+  java_logging_monitoring:
+    description: "Suggest strategies for implementing Java code logging and monitoring for improved code error detection and diagnosis."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code logging and monitoring for improved code error detection and diagnosis.
+
+      Include:
+      1. Logging frameworks and configuration
+      2. Log levels and best practices
+      3. Error tracking and monitoring tools
+      4. Performance monitoring and metrics
+      5. Distributed tracing
+      6. Alerting and notification systems
+
+      Provide implementation examples and configuration samples.
+
+  java_accessibility_optimization:
+    description: "Suggest ways to optimize Java code for improved website or application accessibility for users with disabilities, including using ARIA roles and landmarks."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application accessibility for users with disabilities, including using ARIA roles and landmarks.
+
+      Consider:
+      1. ARIA roles and attributes
+      2. Keyboard navigation support
+      3. Screen reader compatibility
+      4. Color contrast and visual accessibility
+      5. Alternative text and descriptions
+      6. Testing with accessibility tools
+
+      Provide code examples and accessibility guidelines.
+
+  java_modularity_best_practices:
+    description: "Explain the importance of Java code modularity and suggest best practices for writing modular code in Java development."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the importance of Java code modularity and suggest best practices for writing modular code in Java development.
+
+      Cover:
+      1. Module system (Java 9+)
+      2. Package organization
+      3. Dependency management
+      4. Interface design
+      5. Separation of concerns
+      6. Testing modular code
+
+      Provide architectural examples and design patterns.
+
+  java_versioning_branching:
+    description: "Suggest strategies for implementing Java code versioning and branching for improved code management and collaboration."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code versioning and branching for improved code management and collaboration.
+
+      Include:
+      1. Git workflow strategies
+      2. Branch naming conventions
+      3. Code review processes
+      4. Release management
+      5. Version numbering schemes
+      6. Collaboration best practices
+
+      Provide workflow examples and tool recommendations.
+
+  java_low_bandwidth_optimization:
+    description: "Suggest ways to optimize Java code for improved website or application performance in low-bandwidth environments, including using responsive design and progressive loading techniques."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application performance in low-bandwidth environments, including using responsive design and progressive loading techniques.
+
+      Focus on:
+      1. Data compression and caching
+      2. Progressive loading strategies
+      3. Resource optimization
+      4. Network request minimization
+      5. Offline functionality
+      6. Performance monitoring
+
+      Provide optimization techniques and implementation examples.
+
+  java_reactive_programming:
+    description: "Explain the principles of Java reactive programming and suggest ways to use reactive programming for improved code organization and performance."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the principles of Java reactive programming and suggest ways to use reactive programming for improved code organization and performance.
+
+      Cover:
+      1. Reactive streams specification
+      2. RxJava and Project Reactor
+      3. Backpressure handling
+      4. Error handling in reactive flows
+      5. Testing reactive code
+      6. Performance benefits and trade-offs
+
+      Provide reactive programming examples and patterns.
+
+  java_bundling_lazy_loading:
+    description: "Suggest strategies for implementing Java code bundling and lazy loading for improved website or application loading times."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code bundling and lazy loading for improved website or application loading times.
+
+      Include:
+      1. Module bundling strategies
+      2. Lazy loading implementation
+      3. Resource optimization
+      4. Caching mechanisms
+      5. Performance monitoring
+      6. Build tool optimization
+
+      Provide implementation examples and configuration samples.
+
+  java_mobile_battery_optimization:
+    description: "Suggest ways to optimize Java code for improved mobile device battery life, including minimizing network requests and using efficient animations."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved mobile device battery life, including minimizing network requests and using efficient animations.
+
+      Focus on:
+      1. Network request optimization
+      2. Background processing management
+      3. Efficient UI rendering
+      4. Location and sensor usage
+      5. Memory management
+      6. Battery usage monitoring
+
+      Provide mobile-specific optimization techniques.
+
+  java_performance_tuning:
+    description: "Explain the importance of Java code performance tuning and suggest best practices for improving code performance through tuning."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the importance of Java code performance tuning and suggest best practices for improving code performance through tuning.
+
+      Cover:
+      1. JVM tuning parameters
+      2. Garbage collection optimization
+      3. Memory allocation strategies
+      4. CPU and I/O optimization
+      5. Profiling tools and techniques
+      6. Performance testing and benchmarking
+
+      Provide tuning examples and monitoring approaches.
+
+  java_deployment_rollback:
+    description: "Suggest strategies for implementing Java code deployment and rollback for improved code management and disaster recovery."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code deployment and rollback for improved code management and disaster recovery.
+
+      Include:
+      1. Deployment strategies (Blue-Green, Canary, Rolling)
+      2. Containerization and orchestration
+      3. Configuration management
+      4. Health checks and monitoring
+      5. Rollback procedures
+      6. Disaster recovery planning
+
+      Provide deployment pipeline examples and best practices.
+
+  java_usability_optimization:
+    description: "Suggest ways to optimize Java code for improved website or application usability, including using consistent layouts and design patterns."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application usability, including using consistent layouts and design patterns.
+
+      Focus on:
+      1. UI/UX design patterns
+      2. Consistent user interface
+      3. User feedback mechanisms
+      4. Error handling and user guidance
+      5. Performance and responsiveness
+      6. User testing and iteration
+
+      Provide usability improvement examples and design guidelines.
+
+  java_closures_principles:
+    description: "Explain the principles of Java closures and suggest ways to use closures for improved code organization and security."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the principles of Java closures and suggest ways to use closures for improved code organization and security.
+
+      Cover:
+      1. Lambda expressions and functional interfaces
+      2. Method references
+      3. Variable capture and scope
+      4. Functional programming patterns
+      5. Security considerations
+      6. Best practices and common pitfalls
+
+      Provide closure examples and functional programming patterns.
+
+  java_documentation_commenting:
+    description: "Suggest strategies for implementing Java code documentation and commenting for improved code clarity and maintainability."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code documentation and commenting for improved code clarity and maintainability.
+
+      Include:
+      1. Javadoc best practices
+      2. Code commenting guidelines
+      3. API documentation
+      4. README and project documentation
+      5. Code review documentation
+      6. Documentation tools and automation
+
+      Provide documentation examples and templates.
+
+  java_low_bandwidth_accessibility:
+    description: "Suggest ways to optimize Java code for improved website or application accessibility for users with low bandwidth, including using image optimization and compression techniques."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application accessibility for users with low bandwidth, including using image optimization and compression techniques.
+
+      Focus on:
+      1. Image optimization and compression
+      2. Content delivery optimization
+      3. Progressive enhancement
+      4. Offline functionality
+      5. Bandwidth detection and adaptation
+      6. User experience considerations
+
+      Provide optimization techniques and implementation examples.
+
+  java_testing_frameworks:
+    description: "Explain the importance of Java testing frameworks and suggest best practices for using testing frameworks in Java development."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the importance of Java testing frameworks and suggest best practices for using testing frameworks in Java development.
+
+      Cover:
+      1. Unit testing frameworks (JUnit, TestNG)
+      2. Integration testing approaches
+      3. Mock frameworks and test doubles
+      4. Test-driven development (TDD)
+      5. Test automation and CI/CD
+      6. Testing best practices and patterns
+
+      Provide testing examples and framework comparisons.
+
+  java_security_testing:
+    description: "Suggest strategies for implementing Java code security testing and vulnerability scanning for improved website or application security."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code security testing and vulnerability scanning for improved website or application security.
+
+      Include:
+      1. Static application security testing (SAST)
+      2. Dynamic application security testing (DAST)
+      3. Dependency vulnerability scanning
+      4. Penetration testing approaches
+      5. Security code review
+      6. Security testing automation
+
+      Provide security testing examples and tool recommendations.
+
+  java_seo_optimization:
+    description: "Suggest ways to optimize Java code for improved website or application SEO, including using structured data and improving page speed."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application SEO, including using structured data and improving page speed.
+
+      Focus on:
+      1. Server-side rendering optimization
+      2. Meta tags and structured data
+      3. URL structure and routing
+      4. Page speed optimization
+      5. Mobile responsiveness
+      6. SEO monitoring and analytics
+
+      Provide SEO optimization techniques and implementation examples.
+
+  java_unit_testing_principles:
+    description: "Explain the principles of Java unit testing and suggest best practices for writing effective unit tests in Java development."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the principles of Java unit testing and suggest best practices for writing effective unit tests in Java development.
+
+      Cover:
+      1. Unit testing fundamentals
+      2. Test structure and organization
+      3. Assertion strategies
+      4. Test data management
+      5. Mocking and stubbing
+      6. Test coverage and quality metrics
+
+      Provide unit testing examples and best practices.
+
+  java_deployment_versioning:
+    description: "Suggest strategies for implementing Java code deployment and versioning for improved code management and rollback."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code deployment and versioning for improved code management and rollback.
+
+      Include:
+      1. Semantic versioning
+      2. Deployment automation
+      3. Environment management
+      4. Configuration versioning
+      5. Database migration strategies
+      6. Rollback procedures and testing
+
+      Provide deployment and versioning examples.
+
+  java_motor_impairment_accessibility:
+    description: "Suggest ways to optimize Java code for improved website or application accessibility for users with motor impairments, including using keyboard shortcuts and alternative navigation methods."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest ways to optimize Java code for improved website or application accessibility for users with motor impairments, including using keyboard shortcuts and alternative navigation methods.
+
+      Focus on:
+      1. Keyboard navigation support
+      2. Alternative input methods
+      3. Focus management
+      4. Timing and response considerations
+      5. Assistive technology compatibility
+      6. Accessibility testing and validation
+
+      Provide accessibility implementation examples and guidelines.
+
+  java_readability_best_practices:
+    description: "Explain the importance of Java code readability and suggest best practices for writing readable code in Java development."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please explain the importance of Java code readability and suggest best practices for writing readable code in Java development.
+
+      Cover:
+      1. Naming conventions and standards
+      2. Code structure and organization
+      3. Method and class design
+      4. Comments and documentation
+      5. Code formatting and style
+      6. Refactoring for readability
+
+      Provide readability improvement examples and coding standards.
+
+  java_integration_continuous_testing:
+    description: "Suggest strategies for implementing Java code integration and continuous testing for improved code integration and reliability."
+    system_prompt: "You are an expert in java"
+    tags: code, java
+    user_prompt: |
+      Please suggest strategies for implementing Java code integration and continuous testing for improved code integration and reliability.
+
+      Include:
+      1. Continuous integration (CI) setup
+      2. Integration testing strategies
+      3. Automated testing pipelines
+      4. Test environment management
+      5. Quality gates and metrics
+      6. Monitoring and alerting
+
+      Provide CI/CD examples and testing automation approaches.
+
+  write_cn:
+    description: "写作内容"
+    system_prompt: "你是一名熟练的内容创作者。"
+    user_prompt: |
+      请围绕主题"{{topic}}"写一篇详细的文章，内容需信息丰富、有吸引力，并适合{{audience}}。
+      我写了一点随想和笔记, 请扩充续写, 并加以润色, 适当举些实用的示例, 力求行文流畅, 首尾呼应, 幽默风趣, 引人入胜,
+      但不要过于修饰, 不要带有过多 AI 生成的痕迹
+    tags: 写作
+
+  summarize_cn:
+    description: "总结内容"
+    system_prompt: "你是一名优秀的摘要专家。"
+    user_prompt: |
+      请对以下文本进行简洁的总结:
+
+      "{{text}}"
+    tags: 总结
+
+  generate_cn:
+    description: "生成内容"
+    system_prompt: "你是一名富有创意的点子生成者。"
+    user_prompt: |
+      请为"{{context}}"生成{{type}}的点子，要求原创、相关且可行。
+    tags: 生成
+
+  explain_syntax:
+    description: "Explain syntax"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please explain how the {{function}} works in {{language}} in a simple and understandable way
+    tags: learn
+
+  best_practice:
+    description: "Best practice"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please show me best practices for writing {{function}} in {{language}} in a simple and understandable way
+    tags: learn
+
+  recommend_framework:
+    description: "Recommend framework"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please recommend a suitable framework for {{function}} about {{feature}} that following 4L principle (Lots of people use it, Lots of learning materials, Lots of successful cases, License is free)
+    tags: design
+
+  correct_syntax:
+    description: "Correct syntax"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please explain what is the correct syntax for {{function}} in {{language}} in a simple and understandable way with examples
+    tags: code
+
+  design_suggestion:
+    description: "Design suggestion"
+    system_prompt: "You are an expert at system design and architecture"
+    user_prompt: |
+      please tell me how to design a {{system}} for {{business}}. The technology stack is {{technologies}}.
+    tags: design
+
+  fill_in_the_middle:
+    description: "Fill-in-the-middle"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please complete the following code snippet according to the code comments and provide a complete set of unit test cases.
+    tags: code
+
+  convert_code:
+    description: "Convert code"
+    system_prompt: "You are an expert of {{language1}} and {{language2}}"
+    user_prompt: |
+      please convert the below code snippet from {{language1}} to {{language2}}:
+    tags: code
+
+  code_generation:
+    description: "Code generation"
+    system_prompt: "You are an expert in {{language}} and {{frameworks}}"
+    user_prompt: |
+      please use {{frameworks}} to generate CRUD code of corresponding controller, service and repository classes for the following entity classes.
+    tags: code
+
+  code_optimization:
+    description: "Optimize code"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please optimize the following {{language}} code for '{{explain}}' to make it more {{purpose}}:
+    tags: code
+
+  code_review:
+    description: "Find bad smell"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please review the following {{language}} code for code smells and suggest improvements:
+    tags: code
+
+  bug_fix:
+    description: "Fix bug"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please teach me how to fix {{issue}} of the following {{language}} code which is for '{{explain}}':
+    tags: code
+
+  code_refactoring:
+    description: "Refactor code"
+    system_prompt: "You are an expert in {{language}}"
+    user_prompt: |
+      please refactor the given {{language}} code to improve its error handling and resilience:
+    tags: code
+
+  domain_design:
+    description: "Domain design"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please suggest for designing an effective data model for {{project}} which is for {{purpose}}:
+    tags: design
+
+  execute_code:
+    description: "Execute code"
+    system_prompt: "You are a {{language}} interpreter/compiler"
+    user_prompt: |
+      please execute the following {{language}} code, and tell me the execution result, or something wrong if there are any errors of syntax or logic
+    tags: test
+
+  write_document:
+    description: "Write documentation"
+    system_prompt: "You are an expert in {{language}} and {{domain}}, and you are also a professional document writer,"
+    user_prompt: |
+      please write documentation for the code below. You should include detailed instructions to allow a developer to understand and execute easily, also explain what the code does, and possible vulnerabilities that exist in this code:
+    tags: code
+
+  explain_architecture:
+    description: "Explain architecture"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please explain the architecture of {{framework}} and main workflow in a simple and understandable way, also provide some UML diagrams and examples, so that I can have a deeper understanding.
+    tags: design
+
+  log_and_metrics:
+    description: "Add metrics and log"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please add metrics and log for the following {{language}} code that {{explain}}, so that I can measure its performance and easy troubleshooting
+    tags: operation
+
+  write_script:
+    description: "Write script"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please write a script for {{purpose}} by {{tool}} that is to {{explain}}
+    tags: code, write
+
+  write_readme:
+    description: "Write comprehensive README documentation"
+    system_prompt: "You are a senior technical writer and documentation expert with extensive experience in creating clear, professional README files for software projects across various programming languages and domains."
+    user_prompt: |
+      Please create a comprehensive, professional README.md file for this software project. Follow best practices for technical documentation and make it suitable for both newcomers and experienced developers.
+
+      ## Structure Requirements
+
+      Create a well-organized README with the following sections:
+
+      ### 1. Project Header
+      - Clear project title with relevant badges/shields (build status, version, license, etc.)
+      - Concise one-line description
+      - Key features/highlights (3-5 bullet points)
+
+      ### 2. Quick Start (5-minute setup)
+      - Prerequisites check
+      - Installation command(s)
+      - Minimal working example
+      - Expected output
+
+      ### 3. Installation & Setup
+      - System requirements
+      - Dependency management (package managers: npm, pip, maven, cargo, etc.)
+      - Environment setup instructions
+      - Verification steps
+
+      ### 4. Build Instructions
+      - Development environment setup
+      - Build tools and dependencies
+      - Compilation/build commands
+      - Common build issues and solutions
+
+      ### 5. Usage Guide
+      - Basic usage patterns
+      - Configuration options
+      - Common use cases with code examples
+      - API reference (if applicable)
+
+      ### 6. Examples & Tutorials
+      - Practical code examples
+      - Step-by-step tutorials
+      - Integration examples
+      - Links to demo projects
+
+      ### 7. Architecture & Design
+      - High-level architecture overview
+      - Key components explanation
+      - Design decisions and rationale
+
+      ### 8. Integration & Best Practices
+      - Integration guidelines
+      - Performance considerations
+      - Security best practices
+      - Common pitfalls to avoid
+
+      ### 9. Documentation & Resources
+      - API documentation links
+      - Additional guides and tutorials
+      - Related projects
+      - Community resources
+
+      ### 10. Support & Contribution
+      - How to get help (issues, discussions, chat)
+      - Bug reporting guidelines
+      - Contribution guidelines
+      - Development setup for contributors
+      - Code of conduct reference
+
+      ## Writing Guidelines
+
+      - Use clear, concise language
+      - Include practical code examples
+      - Add appropriate emoji for visual appeal (sparingly)
+      - Ensure all code blocks specify language for syntax highlighting
+      - Make it scannable with proper headings and bullet points
+      - Include table of contents for longer READMEs
+      - Test all commands and examples
+      - Keep it up-to-date and maintainable
+
+      ## Project Information
+
+      {{code}}
+
+      ---
+
+      Please analyze the provided project information and create a professional README that would make developers excited to use this project. Focus on clarity, completeness, and practical value.
+    tags: code, write, readme
+
+  improve_readme:
+    description: "Improve README"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please improve the README for the git project, and make it more readable and informative.
+      ------
+      {{code}}
+
+    tags: code, write, readme
+
+  write_api_doc:
+    description: "Write API documentation"
+    system_prompt: "You are an expert in {{language}} and {{domain}}"
+    user_prompt: |
+      please write API documentation for the following {{language}} code
+      ------
+      {{code}}
+      ------
+      the recommended format are:
+      - c++: doxygen
+      - python: sphinx
+      - java: javadoc
+      - go: godoc
+      - rust: rustdoc
+      - javascript: jsdoc
+      - typescript: typescriptdoc
+
+    tags: code, write
+
+
+  write_prompt:
+    description: write prompt
+    system_prompt: You are an expert Prompt Writer for Large Language Models.
+    user_prompt: |
+      Your goal is to improve the prompt given below for {task} :
+
+      Here are several tips on writing great prompts:
+
+      -------
+
+      Start the prompt by stating that it is an expert in the subject.
+
+      Put instructions at the beginning of the prompt and use ### or to separate the instruction and context
+
+      Be specific, descriptive and as detailed as possible about the desired context, outcome, length, format, style, etc
+
+      ---------
+
+      Here's an example of a great prompt:
+
+        As a master YouTube content creator, develop an engaging script that revolves around the theme of "Exploring Ancient Ruins."
+
+        Your script should encompass exciting discoveries, historical insights, and a sense of adventure.
+
+        Include a mix of on-screen narration, engaging visuals, and possibly interactions with co-hosts or experts.
+
+        The script should ideally result in a video of around 10-15 minutes, providing viewers with a captivating journey through the secrets of the past.
+
+        Example:
+
+        "Welcome back, fellow history enthusiasts, to our channel! Today, we embark on a thrilling expedition..."
+
+      -----
+
+      Now, improve the prompt.
+
+      --------------------
+
+      My original prompt: {{prompt}}
+
+      --------------------
+      Improved prompt:
+
+    tags: efficiency
+
+  write_daily_prompt:
+    description: write daily prompt
+    system_prompt: You are an expert Prompt Writer for Large Language Models.
+    user_prompt: |
+      You are a **Senior Software Engineer** who excels at generating precise, task-focused prompts for coding, testing, and documentation.
+      Each day, I will ask for prompts for my tasks.
+
+      Structure your output as follows:
+
+      **Daily Prompt-Set**:
+
+      1. **Task Description**: What I'll do today (e.g., "Write a REST API in Python"; "Add unit tests"; "Update docs").
+      2. **Generated Prompts**: Produce 3–5 distinct prompts I can paste into an LLM. Each should include:
+        - A clear role (e.g., "You are a Python developer…")
+        - Task objective
+        - Constraints (language, frameworks, style)
+        - Desired format (code snippet, test files, documentation outline)
+        - Step-by-step reasoning instructions (chain-of-thought)
+        - Optional: Example or template of expected output
+
+      3. **Self-Review**: Critique each prompt's clarity and effectiveness; suggest a one-sentence improvement.
+
+      ---
+
+      ### Example Ask
+      > "Today's tasks: implement JWT authentication in my existing Flask app; write unit tests for the login route; update README."
+
+      ---
+
+      ### Example Output
+
+      **Task 1:** Implement JWT auth in Flask
+      **Prompt 1:**
+      Role: "You are a senior Flask developer."
+      Objective: "Add JWT-based login using PyJWT…"
+      Constraints & Style: function-based, Python ≥ 3.9, consistent error handling
+      Steps: 1) scaffold auth endpoint 2) generate/verify token 3) secure routes 4) return JSON responses
+      Reasoning: "First, outline steps before coding."
+      Expected Output: code snippet of `/login`, `/protected` routes
+      —Critique: clear but could specify token expiration—improvement: add "token valid for 1 hr."
+
+      ...(and similar for tests and docs)...
+
+      ---
+
+      Now, write a daily prompt for me to do the following tasks:
+      {{tasks}}
+    tags: code, write
+
+  update_readme:
+    description: "Update README documentation for existing projects"
+    system_prompt: "You are a technical documentation expert who specializes in creating comprehensive and well-structured README documents for software projects."
+    user_prompt: |
+      please improve the README for the git project as the following requirements, and make it more readable and informative
+
+      Requirements:
+
+      A readme document should contains the following content
+
+      1. Overall introduction
+
+      2. Get Started
+
+          - how to use the sdk in 5 minutes
+          - basic usage example
+
+      3. build instruction
+
+          - build tools and dependencies
+              e.g. java maven/gradle, c++ cmake, js npm, etc.
+          - how to build the SDK from source
+
+      4. installation instruction
+
+          - how to install/download the SDK library
+          - how to setup the env
+              e.g. Java JDK, python virtualenv, etc.
+
+      5. Usage
+
+          - how to initialize the client
+          - the basic usage: get-secret, get-public-key, hot reload, etc.
+
+
+      6. Examples
+
+         -  examples list and brief introduction
+         -  how to run the example
+
+
+      7. Integration suggestion and best practice
+
+      8. Related documents and API Reference links
+
+      9. Support and feedback info
+
+      10. Contribution guide
+
+      Current Readme:
+
+      {{code}}
+    tags: tools, documentation
+
+  write_user_story:
+    description: "Generate well-formatted user stories from requirements"
+    system_prompt: "You are a product manager and agile development expert who specializes in writing clear, actionable user stories."
+    user_prompt: |
+      Please create well-formatted user stories based on the following requirements.
+
+      Generate user stories that follow the standard format:
+      - "As a [user role], I want [goal] so that [benefit]"
+      - Include acceptance criteria for each story
+      - Make them specific, measurable, and testable
+      - Prioritize them if multiple stories are generated
+
+      User Role: {{userRole}}
+      Feature Description: {{featureDescription}}
+
+      Please provide the user stories in a clear, structured format that can be used directly in project management tools.
+    tags: tools, agile
+
+  report_bug:
+    description: "Create structured bug reports with all necessary details"
+    system_prompt: "You are a QA engineer and bug reporting expert who creates comprehensive, actionable bug reports."
+    user_prompt: |
+      Please create a comprehensive bug report based on the provided information. The report should be clear, detailed, and follow industry best practices.
+
+      Include the following sections:
+      1. Bug Summary (clear, concise title)
+      2. Description (detailed explanation)
+      3. Steps to Reproduce (numbered, specific steps)
+      4. Expected Behavior
+      5. Actual Behavior
+      6. Environment Details
+      7. Priority/Severity assessment
+      8. Additional Information (logs, screenshots placeholder, etc.)
+
+      Bug Information:
+      - Summary: {{bugSummary}}
+      - Steps to Reproduce: {{stepsToReproduce}}
+      - Environment: {{environment}}
+
+      Please format this as a professional bug report that can be submitted to issue tracking systems.
+    tags: tools, testing
+
+  update_comments:
+    description: "Update and improve code comments in existing files"
+    system_prompt: "You are a code documentation expert who specializes in improving and updating code comments to make them more clear, comprehensive, and useful."
+    user_prompt: |
+      Please update and improve the comments in the following code to make them more clear, comprehensive, and useful.
+
+      Requirements for improved comments:
+      1. Add clear and descriptive comments for complex logic
+      2. Update outdated or unclear comments
+      3. Add function/method documentation with parameters and return values
+      4. Include examples where helpful
+      5. Follow the language-specific commenting conventions
+      6. Make comments concise but informative
+      7. Add class/struct documentation where applicable
+      8. Include TODO comments for future improvements if needed
+
+      Please provide the updated code with improved comments while maintaining the original functionality.
+
+      Current Code:
+
+      {{code}}
+    tags: tools, documentation
+
+  write_daily_blog:
+    description: "Generate daily technical blog content"
+    system_prompt: "你是一个技术科普作家和资深的内容创作者, 行文风趣幽默, 发人深省"
+    user_prompt: |
+      我有一个技术博客, 用来分享自己在技术上的想法和心得, 请根据如下模板为我生成今天的博客内容, 替换掉模板中的 "..." 字符串
+
+      今天是 {{get_current_date(format="2006年01月02日")}}, 天气: {{get_weather(city="{{city}}", ext="base")}}
+
+      ---------------
+      ```markdown
+      # {{title}}
+
+      ##  "{{idea}}"
+      ### what
+      ...
+      ### why
+      ...
+      ### how
+      ...
+      ### example
+      ...
+      ### summary
+      ...
+      ### reference
+      ...
+      
+      ## Daily recommendation of 1 github hot project
+      ...
+      ## Daily recommendation of 1 best practice in software development and AI applications
+      ...
+      ## Daily practice of 1 leetcode algorithm question by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily practice of 1 classic design pattern by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily recitation of 10 English quotes
+      ...
+      ```
+      请使用 Markdown 格式分别输出英文和中文的博客内容
+    tags: blog, writing
+
+  write_daily_blog_en:
+    description: "Generate daily technical blog content in English"
+    system_prompt: "You are a technical writer and experienced content creator, with a humorous and insightful writing style"
+    user_prompt: |
+      I have a technical blog to share my thoughts and insights on technology. Please generate today's blog content based on the following template, replacing the "..." strings in the template:
+
+      ---------------
+      ```markdown
+      # {{title}}
+
+      ##  "{{idea}}"
+      ### what
+      ...
+      ### why
+      ...
+      ### how
+      ...
+      ### example
+      ...
+      ### summary
+      ...
+      ### reference
+      ...
+      
+      ## Daily recommendation of 1 github hot project
+      ...
+      ## Daily recommendation of 1 best practice in software development and AI applications
+      ...
+      ## Daily practice of 1 leetcode algorithm question by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily practice of 1 classic design pattern by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily recitation of 10 English quotes
+      ...
+      ```
+      Please output the blog content in Markdown format in English only.
+    tags: blog, writing
+
+  write_daily_blog_cn:
+    description: "Generate daily technical blog content in Chinese"
+    system_prompt: "你是一个技术科普作家和资深的内容创作者, 行文风趣幽默, 发人深省"
+    user_prompt: |
+      我有一个技术博客, 用来分享自己在技术上的想法和心得, 请根据如下模板为我生成今天的博客内容, 替换掉模板中的 "..." 字符串
+
+      ---------------
+      ```markdown
+      # {{title}}
+
+      今天是 {{date}}, 天气: {{weather}}
+
+      ##  "{{idea}}"
+      ### what
+      ...
+      ### why
+      ...
+      ### how
+      ...
+      ### example
+      ...
+      ### summary
+      ...
+      ### reference
+      ...
+      
+      ## Daily recommendation of 1 github hot project
+      ...
+      ## Daily recommendation of 1 best practice in software development and AI applications
+      ...
+      ## Daily practice of 1 leetcode algorithm question by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily practice of 1 classic design pattern by one of the following languages: go/java/python/typescript/rust
+      ...
+      ## Daily recitation of 10 English quotes
+      ...
+      ```
+      请使用 Markdown 格式输出中文的博客内容
+    tags: blog, writing
