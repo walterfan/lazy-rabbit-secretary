@@ -9,16 +9,15 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 // JWTClaims represents the custom claims for our JWT tokens
 type JWTClaims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	RealmID  uuid.UUID `json:"realm_id"`
-	Username string    `json:"username"`
-	Email    string    `json:"email"`
-	Roles    []string  `json:"roles"`
+	UserID   string   `json:"user_id"`
+	RealmID  string   `json:"realm_id"`
+	Username string   `json:"username"`
+	Email    string   `json:"email"`
+	Roles    []string `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -78,7 +77,7 @@ func NewJWTManager(privateKeyPath, publicKeyPath, issuer, audience string) (*JWT
 }
 
 // GenerateToken creates a new JWT token for a user
-func (j *JWTManager) GenerateToken(userID, realmID uuid.UUID, username, email string, roles []string, expiration time.Duration) (string, error) {
+func (j *JWTManager) GenerateToken(userID, realmID string, username, email string, roles []string, expiration time.Duration) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{
 		UserID:   userID,
@@ -88,7 +87,7 @@ func (j *JWTManager) GenerateToken(userID, realmID uuid.UUID, username, email st
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    j.issuer,
-			Subject:   userID.String(),
+			Subject:   userID,
 			Audience:  []string{j.audience},
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiration)),
 			NotBefore: jwt.NewNumericDate(now),

@@ -1,11 +1,12 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
 )
 
 // PermissionEngine handles permission evaluation using AWS-style policies
@@ -21,7 +22,7 @@ func NewPermissionEngine(policyService PolicyService) *PermissionEngine {
 }
 
 // CheckPermission evaluates if a user has permission to perform an action on a resource
-func (p *PermissionEngine) CheckPermission(check PermissionCheck) (bool, error) {
+func (p *PermissionEngine) CheckPermission(check models.PermissionCheck) (bool, error) {
 	// Get all policies for the user (direct, role-based, and resource-based)
 	policies, err := p.policyService.GetUserPolicies(check.UserID, check.RealmID)
 	if err != nil {
@@ -60,25 +61,45 @@ func (p *PermissionEngine) CheckPermission(check PermissionCheck) (bool, error) 
 }
 
 // evaluatePolicy evaluates a single policy against the permission check
-func (p *PermissionEngine) evaluatePolicy(policy *Policy, check PermissionCheck) (*bool, error) {
+func (p *PermissionEngine) evaluatePolicy(policy *models.Policy, check models.PermissionCheck) (*bool, error) {
 	statements, err := p.policyService.GetPolicyStatements(policy.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get policy statements: %w", err)
 	}
 
 	for _, statement := range statements {
+		// Parse Actions from JSON string
+		var actions []string
+		if err := json.Unmarshal([]byte(statement.Actions), &actions); err != nil {
+			continue // Skip invalid statements
+		}
+
+		// Parse Resources from JSON string
+		var resources []string
+		if err := json.Unmarshal([]byte(statement.Resources), &resources); err != nil {
+			continue // Skip invalid statements
+		}
+
+		// Parse Conditions from JSON string (optional)
+		var conditions map[string]interface{}
+		if statement.Conditions != "" {
+			if err := json.Unmarshal([]byte(statement.Conditions), &conditions); err != nil {
+				continue // Skip invalid statements
+			}
+		}
+
 		// Check if action matches
-		if !p.actionMatches(check.Action, statement.Actions) {
+		if !p.actionMatches(check.Action, actions) {
 			continue
 		}
 
 		// Check if resource matches
-		if !p.resourceMatches(check.Resource, statement.Resources) {
+		if !p.resourceMatches(check.Resource, resources) {
 			continue
 		}
 
 		// Check conditions
-		if !p.conditionsMatch(statement.Conditions, check.Context) {
+		if !p.conditionsMatch(conditions, check.Context) {
 			continue
 		}
 
@@ -269,16 +290,28 @@ func (p *PermissionEngine) checkBool(condition interface{}, context map[string]i
 }
 
 // hasExplicitAllow checks if a policy has an explicit allow statement
-func (p *PermissionEngine) hasExplicitAllow(policy *Policy, check PermissionCheck) bool {
+func (p *PermissionEngine) hasExplicitAllow(policy *models.Policy, check models.PermissionCheck) bool {
 	statements, err := p.policyService.GetPolicyStatements(policy.ID)
 	if err != nil {
 		return false
 	}
 
 	for _, statement := range statements {
+		// Parse Actions from JSON string
+		var actions []string
+		if err := json.Unmarshal([]byte(statement.Actions), &actions); err != nil {
+			continue // Skip invalid statements
+		}
+
+		// Parse Resources from JSON string
+		var resources []string
+		if err := json.Unmarshal([]byte(statement.Resources), &resources); err != nil {
+			continue // Skip invalid statements
+		}
+
 		if statement.Effect == "Allow" &&
-			p.actionMatches(check.Action, statement.Actions) &&
-			p.resourceMatches(check.Resource, statement.Resources) {
+			p.actionMatches(check.Action, actions) &&
+			p.resourceMatches(check.Resource, resources) {
 			return true
 		}
 	}
@@ -288,6 +321,6 @@ func (p *PermissionEngine) hasExplicitAllow(policy *Policy, check PermissionChec
 
 // PolicyService interface for dependency injection
 type PolicyService interface {
-	GetUserPolicies(userID, realmID uuid.UUID) ([]*Policy, error)
-	GetPolicyStatements(policyID uuid.UUID) ([]*Statement, error)
+	GetUserPolicies(userID, realmID string) ([]*models.Policy, error)
+	GetPolicyStatements(policyID string) ([]*models.Statement, error)
 }

@@ -1,10 +1,9 @@
 server:
   port: 9090
   webroot: "../frontend/build/index.html"
-  #openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
   tls:
-    cert_file: "certs/cert.pem"
-    key_file: "certs/key.pem"
+    cert_file: "certs/certificate.pem"
+    key_file: "certs/private.pem"
 static_routes:
   public:
     - path: "/static"
@@ -23,11 +22,6 @@ commands:
     desc: "write a blog"
 tasks:
   - name: "Task 1"
-    schedule: "0 */5 * * * *"  # Every 5 minutes
+    schedule: "0 0 * * * *"  # Every 1 hour
     command: "echo 'Hello from Task 1'"
-  - name: "Task 2"
-    command: "echo 'Hello from Task 2'"
-    deadline: "2025-04-10T14:30:00+08:00"
-  - name: "Task 3"
-    schedule: "0 * * * * *"  # Every 1 minute
-    function: "check(https://www.fanyamin.com)"
+

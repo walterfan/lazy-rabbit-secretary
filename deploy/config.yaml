@@ -1,0 +1,33 @@
+server:
+  port: 2025
+  webroot: "./frontend/dist/index.html"
+  #openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+  tls:
+    cert_file: "certs/certificate.pem"
+    key_file: "certs/private.pem"
+static_routes:
+  public:
+    - path: "/assets"
+      dir: "./frontend/dist/assets"
+    - path: "/static"
+      dir: "./frontend/dist/static"
+    - path: "/web"
+      dir: "./frontend/dist"
+
+  private:
+    - path: "/diary"
+      dir: "./doc/build/html"
+
+commands:
+  - name: "make_calendar"
+    desc: "make a calendar"
+  - name: "draw_mindmap"
+    desc: "draw a mindmap"
+  - name: "ask_question"
+    desc: "ask a question"
+  - name: "write_blog"
+    desc: "write a blog"
+tasks:
+  - name: "Task 1"
+    schedule: "0 0 * * * *"  # Every 1 hour
+    function: "check(https://www.fanyamin.com)"

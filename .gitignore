@@ -1,3 +1,7 @@
+lazy-rabbit-reminder
+lazy-rabbit-reminder.db
+certs/
+vendor/
 .idea/
 target/
 .settings/
@@ -10,7 +14,7 @@ node_modules/
 .gradle
 **/build/
 !src/**/build/
-
+dist/
 # Ignore Gradle GUI config
 gradle-app.setting
 

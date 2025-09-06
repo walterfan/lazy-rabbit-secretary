@@ -1,0 +1,78 @@
+# Ignore build artifacts and temporary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+lazy-rabbit-reminder
+lazy-rabbit-reminder.exe
+walter-config.yml
+# Ignore test binary
+*.test
+
+# Ignore output of the go coverage tool
+*.out
+
+# Ignore dependency directories (commented out to include vendor in Docker build)
+# vendor/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ignore log files
+*.log
+logs/
+
+# Ignore database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Ignore environment files
+.env
+.env.local
+.env.production
+
+# Ignore temporary files
+tmp/
+temp/
+target/
+
+# Ignore documentation build
+docs/_build/
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore Docker files in the image
+Dockerfile
+.dockerignore
+
+# Ignore README and markdown files (optional, comment out if needed in container)
+*.md
+
+# Ignore test files (optional, comment out if running tests in container)
+*_test.go
+
+# Ignore Makefile (optional)
+Makefile
+
+# Ignore shell scripts (optional, comment out if needed)
+*.sh
+
+# Ignore YAML files that are not config (optional)
+docker-compose*.yml

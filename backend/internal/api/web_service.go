@@ -5,11 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/metrics"
 )
 
 type StaticRoute struct {
@@ -31,24 +38,39 @@ type NewsItem struct {
 type WebApiService struct {
 	logger      *zap.Logger
 	redisClient *redis.Client
+	authService *auth.AuthService
 }
 
 // NewWebApiService creates a new instance of WebApiService with the required dependencies.
-func NewWebApiService(logger *zap.Logger, redisClient *redis.Client) *WebApiService {
+func NewWebApiService(logger *zap.Logger, redisClient *redis.Client, authService *auth.AuthService) *WebApiService {
 	return &WebApiService{
 		logger:      logger,
 		redisClient: redisClient,
+		authService: authService,
 	}
 }
 
 // Run starts the HTTP/HTTPS server with routes and middleware
 func (thiz *WebApiService) Run() {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
 	r.SetTrustedProxies(nil)
 
+	// Paths to skip for logging and metrics
+	skipPrefixes := []string{"/assets/", "/asserts/", "/.well-known/"}
+
+	// Register Prometheus metrics and middleware (with skips)
+	metrics.Register()
+	r.Use(wrapMiddlewareWithSkips(metrics.MetricsMiddleware(), skipPrefixes))
+
+	// Structured request logging middleware (with skips)
+	r.Use(thiz.requestLoggerWithSkips(skipPrefixes))
+
+	// Health and metrics
 	r.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{"message": "pong"})
 	})
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	r.GET("/api/v1/news", func(c *gin.Context) {
 		ctx := context.Background()
@@ -123,6 +145,9 @@ func (thiz *WebApiService) Run() {
 		})
 	})
 
+	// Register auth routes
+	thiz.setupAuthRoutes(r)
+
 	// Default route for SPA
 	r.NoRoute(func(ctx *gin.Context) {
 		frontendPath := viper.GetString("server.webroot")
@@ -137,6 +162,53 @@ func (thiz *WebApiService) Run() {
 
 	// Run the server
 	thiz.startServer(r)
+}
+
+// requestLoggerWithSkips logs request/response details unless path matches skip prefixes
+func (thiz *WebApiService) requestLoggerWithSkips(skipPrefixes []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		for _, p := range skipPrefixes {
+			if strings.HasPrefix(path, p) {
+				c.Next()
+				return
+			}
+		}
+
+		start := time.Now()
+		c.Next()
+
+		latency := time.Since(start)
+		status := c.Writer.Status()
+		fullPath := c.FullPath()
+		if fullPath == "" {
+			fullPath = path
+		}
+
+		thiz.logger.Info("http request",
+			zap.String("method", c.Request.Method),
+			zap.String("path", fullPath),
+			zap.Int("status", status),
+			zap.Duration("latency", latency),
+			zap.Int("response_size", c.Writer.Size()),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("user_agent", c.Request.UserAgent()),
+		)
+	}
+}
+
+// wrapMiddlewareWithSkips wraps a gin middleware and skips it for matching path prefixes
+func wrapMiddlewareWithSkips(mw gin.HandlerFunc, skipPrefixes []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		for _, p := range skipPrefixes {
+			if strings.HasPrefix(path, p) {
+				c.Next()
+				return
+			}
+		}
+		mw(c)
+	}
 }
 
 func (thiz *WebApiService) startServer(r *gin.Engine) {
@@ -197,6 +269,30 @@ func (thiz *WebApiService) setupPublicRoutes(r *gin.Engine) {
 			zap.Error(err),
 		)
 	}
+
+	// Ensure /assets is served when server.webroot is configured but assets route is missing
+	webroot := viper.GetString("server.webroot")
+	if webroot != "" {
+		distDir := filepath.Dir(webroot)
+		assetsDir := filepath.Join(distDir, "assets")
+		if info, err := os.Stat(assetsDir); err == nil && info.IsDir() {
+			missing := true
+			for _, route := range publicRoutes {
+				if route.Path == "/assets" {
+					missing = false
+					break
+				}
+			}
+			if missing {
+				publicRoutes = append(publicRoutes, StaticRoute{Path: "/assets", Dir: assetsDir})
+				thiz.logger.Info("Auto-registered assets static route",
+					zap.String("path", "/assets"),
+					zap.String("dir", assetsDir),
+				)
+			}
+		}
+	}
+
 	for _, route := range publicRoutes {
 		r.Static(route.Path, route.Dir)
 		thiz.logger.Info("Registered public route",
@@ -230,4 +326,15 @@ func (thiz *WebApiService) setupPrivateRoutes(r *gin.Engine) {
 func (thiz *WebApiService) setupCommands(r *gin.Engine) {
 
 	RegisterCommandHandler("read_over_ssh", ReadOverSSH)
+}
+
+func (thiz *WebApiService) setupAuthRoutes(r *gin.Engine) {
+	// Create auth handlers and middleware
+	authHandlers := auth.NewAuthHandlers(thiz.authService)
+	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
+
+	// Register auth routes
+	auth.RegisterRoutes(r, authHandlers, authMiddleware)
+
+	thiz.logger.Info("Registered authentication routes")
 }

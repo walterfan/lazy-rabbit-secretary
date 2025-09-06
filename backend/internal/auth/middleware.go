@@ -149,16 +149,16 @@ func (m *AuthMiddleware) RequirePermission(action, resource string) gin.HandlerF
 		}
 
 		// Add user context
-		context["user:id"] = userID.(uuid.UUID).String()
-		context["user:realm_id"] = realmID.(uuid.UUID).String()
+		context["user:id"] = userID.(string)
+		context["user:realm_id"] = realmID.(string)
 		context["user:username"] = c.GetString("username")
 		context["user:email"] = c.GetString("email")
 		context["user:roles"] = c.GetStringSlice("roles")
 
 		// Check permission
 		allowed, err := m.authService.CheckPermission(
-			userID.(uuid.UUID),
-			realmID.(uuid.UUID),
+			userID.(string),
+			realmID.(string),
 			action,
 			resource,
 			context,

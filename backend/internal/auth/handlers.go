@@ -2,9 +2,11 @@ package auth
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
 )
 
 // AuthHandlers provides HTTP handlers for authentication
@@ -21,7 +23,7 @@ func NewAuthHandlers(authService *AuthService) *AuthHandlers {
 
 // Login handles user authentication
 func (h *AuthHandlers) Login(c *gin.Context) {
-	var req LoginRequest
+	var req models.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
 		return
@@ -49,7 +51,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 
 // RefreshToken handles token refresh
 func (h *AuthHandlers) RefreshToken(c *gin.Context) {
-	var req RefreshRequest
+	var req models.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
 		return
@@ -75,7 +77,7 @@ func (h *AuthHandlers) RefreshToken(c *gin.Context) {
 
 // Register handles user registration
 func (h *AuthHandlers) Register(c *gin.Context) {
-	var req CreateUserRequest
+	var req models.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
 		return
@@ -104,8 +106,26 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "User registered successfully",
+		"message": "User registered successfully. Please check your email to confirm your account.",
 		"user":    user,
+	})
+}
+
+// ConfirmEmail confirms a user's email address
+func (h *AuthHandlers) ConfirmEmail(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Confirmation token is required"})
+		return
+	}
+
+	if err := h.authService.ConfirmEmail(token); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Email confirmed successfully. Your registration is now pending admin approval.",
 	})
 }
 
@@ -193,7 +213,7 @@ func (h *AuthHandlers) CheckPermission(c *gin.Context) {
 	context["user:email"] = c.GetString("email")
 	context["user:roles"] = c.GetStringSlice("roles")
 
-	allowed, err := h.authService.CheckPermission(userID, realmID, action, resource, context)
+	allowed, err := h.authService.CheckPermission(userID.String(), realmID.String(), action, resource, context)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check permissions"})
 		return
@@ -304,4 +324,77 @@ func (h *AuthHandlers) UpdateRealm(c *gin.Context) {
 
 func (h *AuthHandlers) DeleteRealm(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Delete realm - not implemented yet"})
+}
+
+// GetPendingRegistrations handles getting pending user registrations
+func (h *AuthHandlers) GetPendingRegistrations(c *gin.Context) {
+	var req models.UserRegistrationRequest
+
+	// Parse query parameters
+	if realmName := c.Query("realm_name"); realmName != "" {
+		req.RealmName = realmName
+	}
+	if status := c.Query("status"); status != "" {
+		req.Status = models.UserStatus(status)
+	}
+	if page := c.Query("page"); page != "" {
+		if p, err := strconv.Atoi(page); err == nil {
+			req.Page = p
+		}
+	}
+	if pageSize := c.Query("page_size"); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil {
+			req.PageSize = ps
+		}
+	}
+
+	// Default to pending status if no status specified
+	if req.Status == "" {
+		req.Status = models.UserStatusPending
+	}
+
+	response, err := h.authService.GetPendingRegistrations(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get registrations", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ApproveRegistration handles approving or denying user registration
+func (h *AuthHandlers) ApproveRegistration(c *gin.Context) {
+	var req models.ApproveRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
+		return
+	}
+
+	// Get current user from context (who is approving)
+	currentUserID, exists := GetCurrentUser(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	response, err := h.authService.ApproveRegistration(req, currentUserID.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process registration approval", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GetRegistrationStats handles getting registration statistics
+func (h *AuthHandlers) GetRegistrationStats(c *gin.Context) {
+	realmName := c.Query("realm_name")
+
+	stats, err := h.authService.GetUserRegistrationStats(realmName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get registration stats", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"stats": stats})
 }

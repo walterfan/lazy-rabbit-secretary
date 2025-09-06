@@ -11,6 +11,7 @@ func RegisterRoutes(router *gin.Engine, handlers *AuthHandlers, middleware *Auth
 	{
 		public.POST("/login", handlers.Login)
 		public.POST("/register", handlers.Register)
+		public.GET("/confirm", handlers.ConfirmEmail)
 		public.POST("/refresh", handlers.RefreshToken)
 		public.GET("/health", handlers.HealthCheck)
 	}
@@ -35,6 +36,11 @@ func RegisterRoutes(router *gin.Engine, handlers *AuthHandlers, middleware *Auth
 		admin.GET("/users/:id", handlers.GetUser)       // Get user
 		admin.PUT("/users/:id", handlers.UpdateUser)    // Update user
 		admin.DELETE("/users/:id", handlers.DeleteUser) // Delete user
+
+		// Registration management
+		admin.GET("/registrations", handlers.GetPendingRegistrations)      // List pending registrations
+		admin.POST("/registrations/approve", handlers.ApproveRegistration) // Approve/deny registration
+		admin.GET("/registrations/stats", handlers.GetRegistrationStats)   // Get registration statistics
 
 		// Role management
 		admin.GET("/roles", handlers.GetRoles)          // List roles

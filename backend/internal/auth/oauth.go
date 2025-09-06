@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 // OAuth2Manager handles OAuth 2.0 flows
@@ -24,7 +23,7 @@ type OAuthClient struct {
 	Name         string    `json:"client_name"`
 	RedirectURIs []string  `json:"redirect_uris"`
 	Scopes       []string  `json:"scopes"`
-	CreatedBy    uuid.UUID `json:"created_by"`
+	CreatedBy    string    `json:"created_by"`
 	CreatedTime  time.Time `json:"created_time"`
 	IsActive     bool      `json:"is_active"`
 }
@@ -33,8 +32,8 @@ type OAuthClient struct {
 type AuthCode struct {
 	Code        string    `json:"code"`
 	ClientID    string    `json:"client_id"`
-	UserID      uuid.UUID `json:"user_id"`
-	RealmID     uuid.UUID `json:"realm_id"`
+	UserID      string    `json:"user_id"`
+	RealmID     string    `json:"realm_id"`
 	RedirectURI string    `json:"redirect_uri"`
 	Scopes      []string  `json:"scopes"`
 	ExpiresAt   time.Time `json:"expires_at"`
@@ -47,7 +46,7 @@ type AccessToken struct {
 	TokenType string    `json:"token_type"`
 	ExpiresIn int64     `json:"expires_in"`
 	Scopes    []string  `json:"scopes"`
-	UserID    uuid.UUID `json:"user_id"`
+	UserID    string    `json:"user_id"`
 	ClientID  string    `json:"client_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -110,7 +109,7 @@ func (o *OAuth2Manager) ValidateClient(clientID, clientSecret string) bool {
 }
 
 // CreateAuthCode creates a new authorization code
-func (o *OAuth2Manager) CreateAuthCode(clientID string, userID, realmID uuid.UUID, redirectURI string, scopes []string) (*AuthCode, error) {
+func (o *OAuth2Manager) CreateAuthCode(clientID string, userID, realmID string, redirectURI string, scopes []string) (*AuthCode, error) {
 	code := &AuthCode{
 		Code:        generateRandomString(32),
 		ClientID:    clientID,
@@ -145,7 +144,7 @@ func (o *OAuth2Manager) ValidateAuthCode(code, clientID, redirectURI string) (*A
 }
 
 // CreateAccessToken creates a new access token
-func (o *OAuth2Manager) CreateAccessToken(clientID string, userID uuid.UUID, scopes []string) *AccessToken {
+func (o *OAuth2Manager) CreateAccessToken(clientID string, userID string, scopes []string) *AccessToken {
 	token := &AccessToken{
 		Token:     generateRandomString(64),
 		TokenType: "Bearer",
@@ -312,10 +311,10 @@ func (h *OAuth2Handlers) UserInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"sub":      user.ID.String(),
+		"sub":      user.ID,
 		"name":     user.Username,
 		"email":    user.Email,
-		"realm_id": user.RealmID.String(),
+		"realm_id": user.RealmID,
 	})
 }
 

@@ -1,17 +1,12 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"time"
-
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/joho/godotenv"
 )
 
 var rootCmd = &cobra.Command{
@@ -21,7 +16,6 @@ var rootCmd = &cobra.Command{
 }
 
 var logger *zap.Logger
-var rdb *redis.Client
 
 func initLogger() {
 	var err error
@@ -67,52 +61,18 @@ func GetLogger() *zap.Logger {
 	return logger
 }
 
-func GetRedisClient() *redis.Client {
-	return rdb
-}
-
-func initRedis() {
+func init() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
-		logger.Fatal("Error loading .env file",
-			zap.Error(err),
-		)
+		// .env file is optional, so we just log a warning instead of failing
+		fmt.Printf("Warning: Could not load .env file: %v\n", err)
 	}
 
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-
-	// Initialize the Redis client
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: redisPassword,
-		DB:       0, // Use default DB
-	})
-
-	ctx := context.Background()
-	newsKey := "news:latest"
-	timestamp := time.Now().Unix()
-
-	err = rdb.ZAdd(ctx, newsKey, &redis.Z{
-		Score:  float64(timestamp),
-		Member: "Your news message here",
-	}).Err()
-
-	if err != nil {
-		logger.Fatal("Error adding news to Redis",
-			zap.Error(err),
-		)
-	}
-}
-
-func init() {
 	rootCmd.PersistentFlags().String("config", "", "config file (optional) instead of using default 'config/config.yaml'")
 
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		initLogger()
 		initConfig()
-		initRedis()
 	}
 }

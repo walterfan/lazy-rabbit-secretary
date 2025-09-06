@@ -1,0 +1,10 @@
+# Godog configuration file for BDD tests
+format: pretty
+paths:
+  - ../features
+output: stdout
+randomize: false
+strict: true
+stop-on-failure: false
+tags: ""
+concurrency: 1

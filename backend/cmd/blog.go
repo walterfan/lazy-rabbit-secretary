@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/llm"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/log"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/tools"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/util"
+
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/llm"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/tools"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/util"
 )
 
 var blogCmd = &cobra.Command{
@@ -63,15 +63,9 @@ func init() {
 }
 
 func runBlogGenerator(cmd *cobra.Command, args []string) {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		// .env file is optional, so we just log a warning instead of failing
-		fmt.Printf("Warning: Could not load .env file: %v\n", err)
-	}
 
 	// Initialize logger if not already done
-	err = log.InitLogger()
+	err := log.InitLogger()
 	if err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
 		return

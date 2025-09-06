@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Go 语言开发指北
+Lazy Rabbit Reminder
 =======================================
 
 
@@ -13,7 +13,7 @@ Go 语言开发指北
 
 
 ============= =============
-**Abstract**  Go 语言开发指北
+**Abstract**  Lazy Rabbit Reminder
 **Authors**   Walter Fan
 **Category**  learning note
 **Status**    WIP
@@ -27,8 +27,8 @@ Go 语言开发指北
    :maxdepth: 2
    :caption: Contents:
 
-   1.basic/index
-   1.cheatsheet/index
+   1.design/index
+   2.cheatsheet/index
 
 Indices and tables
 ==================
