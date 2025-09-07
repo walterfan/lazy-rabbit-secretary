@@ -1,38 +1,5 @@
-# Build stage
-FROM golang:1.24-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-ARG GOPROXY
-ENV GOPROXY=$GOPROXY
-ENV GO111MODULE=on
-ENV CGO_ENABLED=1
-
-# Install build dependencies for CGO (needed for SQLite and other database drivers)
-RUN apk add --no-cache \
-    git \
-    gcc \
-    musl-dev \
-    sqlite-dev \
-    postgresql-dev \
-    pkgconfig \
-    ca-certificates
-
-# Update CA certificates
-RUN update-ca-certificates
-
-# Copy go mod files and vendor directory
-COPY go.mod go.sum ./
-COPY vendor ./vendor
-
-# Copy source code
-COPY . .
-
-# Build the application with CGO enabled for database drivers
-RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflags "-static"' -o lazy-rabbit-reminder .
-
-# Final stage
+# Dockerfile for pre-built binary deployment
+# This expects the binary to be built locally and copied to the container
 FROM alpine:latest
 
 # Install runtime dependencies
@@ -40,24 +7,29 @@ RUN apk --no-cache add \
     ca-certificates \
     tzdata \
     curl \
-    wget
+    wget \
+    sqlite
 
 # Set timezone
 ENV TZ=Asia/Shanghai
 
 WORKDIR /root/
 
-# Copy the binary from builder stage
-COPY --from=builder /app/lazy-rabbit-reminder .
+# Copy the pre-built binary (built locally)
+# Build command: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -ldflags '-linkmode external -extldflags "-static"' -o lazy-rabbit-reminder .
+COPY lazy-rabbit-reminder .
 
 # Copy config files
-COPY --from=builder /app/config ./config
+COPY config ./config
 
 # Copy certs directory (for JWT keys)
-COPY --from=builder /app/certs ./certs
+COPY certs ./certs
 
 # Create directories for data and logs
 RUN mkdir -p data logs
+
+# Make binary executable
+RUN chmod +x lazy-rabbit-reminder
 
 # Expose port (default application port)
 EXPOSE 8080

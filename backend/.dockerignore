@@ -4,8 +4,10 @@
 *.dll
 *.so
 *.dylib
-lazy-rabbit-reminder
+# Keep the main binary for copying to Docker
+# lazy-rabbit-reminder
 lazy-rabbit-reminder.exe
+lazy-rabbit-reminder-dev
 walter-config.yml
 # Ignore test binary
 *.test
@@ -13,8 +15,11 @@ walter-config.yml
 # Ignore output of the go coverage tool
 *.out
 
-# Ignore dependency directories (commented out to include vendor in Docker build)
-# vendor/
+# For fast deployment, we don't need Go source files in Docker context
+*.go
+go.mod
+go.sum
+vendor/
 
 # Ignore IDE files
 .vscode/
@@ -71,8 +76,16 @@ Dockerfile
 # Ignore Makefile (optional)
 Makefile
 
-# Ignore shell scripts (optional, comment out if needed)
-*.sh
+# Keep build scripts for reference but don't copy to container
+# *.sh
 
 # Ignore YAML files that are not config (optional)
 docker-compose*.yml
+
+# Ignore BDD test files
+bdd/
+
+# Ignore documentation
+*.md
+FAST-DEPLOYMENT.md
+Makefile.docker
