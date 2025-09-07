@@ -28,7 +28,8 @@ Lazy Rabbit Reminder
    :caption: Contents:
 
    1.design/index
-   2.cheatsheet/index
+   2.test/index
+   3.devops/index
 
 Indices and tables
 ==================
