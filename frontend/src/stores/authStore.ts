@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 
 export interface User {
   id: string;
@@ -10,9 +11,9 @@ export interface User {
   is_active: boolean;
   status: 'pending' | 'approved' | 'denied' | 'suspended';
   created_by: string;
-  created_time: string;
+  created_at: string;
   updated_by: string;
-  updated_time: string;
+  updated_at: string;
 }
 
 export interface AuthState {
@@ -103,8 +104,9 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user');
   };
 
-  const refreshAuth = async () => {
+  const refreshAuth = async (): Promise<boolean> => {
     if (!refreshToken.value) {
+      console.warn('No refresh token available');
       return false;
     }
 
@@ -120,18 +122,25 @@ export const useAuthStore = defineStore('auth', () => {
       });
 
       if (!response.ok) {
-        throw new Error('Token refresh failed');
+        console.error('Token refresh failed:', response.status, response.statusText);
+        return false;
       }
 
       const data = await response.json();
       
+      // Update tokens
       token.value = data.access_token;
+      if (data.refresh_token) {
+        refreshToken.value = data.refresh_token;
+        localStorage.setItem('refresh_token', data.refresh_token);
+      }
+      
       localStorage.setItem('access_token', data.access_token);
-
+      
+      console.log('Token refreshed successfully');
       return true;
     } catch (error) {
       console.error('Token refresh error:', error);
-      signOut();
       return false;
     }
   };
@@ -162,11 +171,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (params.page) searchParams.append('page', params.page.toString());
       if (params.pageSize) searchParams.append('page_size', params.pageSize.toString());
 
-      const response = await fetch(`/api/v1/admin/registrations?${searchParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-        },
-      });
+      const response = await makeAuthenticatedRequest(`/api/v1/admin/registrations?${searchParams}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch registrations');
@@ -182,11 +187,7 @@ export const useAuthStore = defineStore('auth', () => {
   const getRegistrationStats = async (realmName?: string) => {
     try {
       const params = realmName ? `?realm_name=${realmName}` : '';
-      const response = await fetch(`/api/v1/admin/registrations/stats${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-        },
-      });
+      const response = await makeAuthenticatedRequest(`/api/v1/admin/registrations/stats${params}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch registration stats');
@@ -201,17 +202,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   const approveRegistration = async (userId: string, approved: boolean, reason?: string) => {
     try {
-      const response = await fetch('/api/v1/admin/registrations/approve', {
+      const response = await makeAuthenticatedRequest('/api/v1/admin/registrations/approve', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           user_id: userId,
           approved,
           reason,
-        }),
+        })
       });
 
       if (!response.ok) {

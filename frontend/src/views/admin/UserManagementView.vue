@@ -51,7 +51,7 @@
                         {{ user.is_active ? 'Active' : 'Inactive' }}
                       </span>
                     </td>
-                    <td>{{ formatDate(user.created_time) }}</td>
+                    <td>{{ formatDate(user.created_at) }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-primary me-1" @click="editUser(user)">
                         <i class="bi bi-pencil"></i>
@@ -157,8 +157,8 @@ interface User {
   email: string;
   realm_id: string;
   is_active: boolean;
-  created_time: string;
-  updated_time: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const users = ref<User[]>([]);

@@ -72,9 +72,14 @@ func GetAllModels() []interface{} {
 		&UserPolicy{},
 		&ResourcePolicy{},
 		&Project{},
+		&Book{},
+		&BookTag{},
 		&Code{},
 		&Document{},
 		&Prompt{},
+		&Secret{},
+		&Task{},
+		&Reminder{},
 	}
 }
 

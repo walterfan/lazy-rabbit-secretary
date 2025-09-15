@@ -51,7 +51,7 @@
                     <td>
                       <span class="badge bg-info">{{ policy.statement_count || 0 }}</span>
                     </td>
-                    <td>{{ formatDate(policy.created_time) }}</td>
+                    <td>{{ formatDate(policy.created_at) }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-primary me-1" @click="editPolicy(policy)">
                         <i class="bi bi-pencil"></i>
@@ -289,8 +289,8 @@ interface Policy {
   description: string;
   realm_id: string;
   version: string;
-  created_time: string;
-  updated_time: string;
+  created_at: string;
+  updated_at: string;
   statement_count?: number;
 }
 

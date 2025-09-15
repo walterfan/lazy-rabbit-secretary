@@ -1,6 +1,6 @@
-## BDD Tests with Godog
+# BDD Tests with Godog
 
-### ✅ **Complete BDD Test Framework Setup**
+## ✅ **Complete BDD Test Framework Setup**
 
 1. **📁 Directory Structure**
    ```
@@ -24,16 +24,16 @@
    - Successful registration flow
    - Duplicate email validation
 
-### ✅ **Key Components Implemented**
+## ✅ **Key Components Implemented**
 
-#### **Step Definitions** (`steps/user_registration_steps.go`)
+### **Step Definitions** (`steps/user_registration_steps.go`)
 - `UserRegistrationContext` - Test context management
 - Database setup and cleanup
 - HTTP request/response handling
 - User creation and validation steps
 - Integration with auth services
 
-#### **Test Helpers** (`support/test_helpers.go`)
+### **Test Helpers** (`support/test_helpers.go`)
 - `TestConfig` - Configuration management
 - `SetupTestDatabase()` - Database initialization
 - `CleanupTestDatabase()` - Test data cleanup
@@ -41,12 +41,12 @@
 - `CreateTestUser()` - Test user creation
 - `AssertUserExists()` / `AssertUserNotExists()` - User validation
 
-#### **Test Runner** (`main_test.go`)
+### **Test Runner** (`main_test.go`)
 - Godog integration with Go testing
 - Scenario initialization
 - Global hooks for setup/teardown
 
-### ✅ **Features Implemented**
+## ✅ **Features Implemented**
 
 1. **🔐 Authentication Service Integration**
    - JWT token generation with test keys
@@ -71,9 +71,9 @@
    - Makefile with multiple test targets
    - Environment-specific settings
 
-### ✅ **Test Scenarios Covered**
+## ✅ **Test Scenarios Covered**
 
-#### **Successful Registration**
+### **Successful Registration**
 ```gherkin
 Scenario: Successful registration
   Given a clean user repository
@@ -83,7 +83,7 @@ Scenario: Successful registration
   And the user "test@example.com" should exist with status "pending"
 ```
 
-#### **Duplicate Email Validation**
+### **Duplicate Email Validation**
 ```gherkin
 Scenario: Registration with existing email
   Given a clean user repository
@@ -92,15 +92,15 @@ Scenario: Registration with existing email
   Then the response status should be 409
 ```
 
-## 🚀 **How to Run Tests**
+# 🚀 **How to Run Tests**
 
-### **Using Go Test**
+## **Using Go Test**
 ```bash
 cd bdd
 go test -v
 ```
 
-### **Using Godog CLI**
+## **Using Godog CLI**
 ```bash
 # Install godog CLI
 make install
@@ -121,7 +121,7 @@ make test-feature FEATURE=user_registration.feature
 make test-tags TAGS="@registration"
 ```
 
-### **Available Make Targets**
+## **Available Make Targets**
 ```bash
 make help           # Show available targets
 make test           # Run BDD tests with progress format
@@ -131,9 +131,9 @@ make clean          # Clean test artifacts
 make install        # Install godog CLI tool
 ```
 
-## 🔧 **Configuration**
+# 🔧 **Configuration**
 
-### **Godog Configuration** (`godog.yaml`)
+## **Godog Configuration** (`godog.yaml`)
 ```yaml
 format: pretty
 paths:
@@ -146,20 +146,20 @@ tags: ""
 concurrency: 1
 ```
 
-### **Test Database**
+## **Test Database**
 - **Type**: SQLite in-memory (`:memory:`)
 - **Models**: Auto-migrated from `internal/models`
 - **Data**: Seeded with default realms, users, roles
 - **Cleanup**: Automatic between scenarios
 
-### **JWT Keys**
+## **JWT Keys**
 - **Generation**: RSA 2048-bit keys created in-memory
 - **Format**: PKCS1 for private key, PKIX for public key
 - **Usage**: Temporary files for JWT manager initialization
 
-## 🐛 **Current Status & Known Issues**
+# 🐛 **Current Status & Known Issues**
 
-### ✅ **Working Components**
+## ✅ **Working Components**
 - BDD framework setup and configuration
 - Step definitions and test helpers
 - JWT key generation and authentication setup
@@ -167,17 +167,17 @@ concurrency: 1
 - HTTP request/response handling
 - Test runner integration
 
-### ⚠️ **Known Issues**
+## ⚠️ **Known Issues**
 1. **Database Cleanup**: Table names mismatch between cleanup queries and actual schema
 2. **Test Isolation**: Data persistence between test runs causing conflicts
 3. **Default Data**: Initial database seeding interferes with clean test state
 
-### 🔧 **Fixes Needed**
+## 🔧 **Fixes Needed**
 1. **Update cleanup queries** to use correct table names (`app_user` instead of `users`)
 2. **Improve test isolation** by using unique test database per scenario
 3. **Fix realm ID resolution** in test user creation
 
-## 📈 **Benefits Achieved**
+# 📈 **Benefits Achieved**
 
 1. **🎯 Behavior-Driven Testing**: Clear, readable test scenarios in Gherkin syntax
 2. **🔄 Automated Testing**: Integration with Go testing framework
@@ -186,28 +186,28 @@ concurrency: 1
 5. **🛠️ Developer Tools**: Makefile with convenient test commands
 6. **🔧 Extensible Framework**: Easy to add new scenarios and step definitions
 
-## 🚀 **Next Steps**
+# 🚀 **Next Steps**
 
-### **Immediate Fixes**
+## **Immediate Fixes**
 1. Fix database table name mismatches in cleanup queries
 2. Implement proper test isolation with unique databases
 3. Resolve realm ID issues in test setup
 
-### **Feature Expansion**
+## **Feature Expansion**
 1. Add more user registration scenarios (password validation, email confirmation)
 2. Implement login/logout BDD tests
 3. Add permission and role management scenarios
 4. Create API endpoint testing scenarios
 
-### **Infrastructure Improvements**
+## **Infrastructure Improvements**
 1. Add Docker support for test execution
 2. Implement CI/CD integration
 3. Add performance testing scenarios
 4. Create test data factories
 
-## 📚 **Example Usage**
+# 📚 **Example Usage**
 
-### **Adding New Step Definitions**
+## **Adding New Step Definitions**
 ```go
 // In steps/user_registration_steps.go
 func (ctx *UserRegistrationContext) iLoginWithCredentials(email, password string) error {
@@ -219,7 +219,7 @@ func (ctx *UserRegistrationContext) iLoginWithCredentials(email, password string
 sc.Step(`^I login with email "([^"]*)" and password "([^"]*)"$`, ctx.iLoginWithCredentials)
 ```
 
-### **Adding New Feature File**
+## **Adding New Feature File**
 ```gherkin
 # features/user_login.feature
 Feature: User Login
@@ -234,7 +234,7 @@ Feature: User Login
     And I should receive a valid JWT token
 ```
 
-## 🎉 **Conclusion**
+# 🎉 **Conclusion**
 
 The BDD testing framework is successfully implemented and provides a solid foundation for behavior-driven testing of the lazy-rabbit-reminder application. While there are some minor issues with database cleanup and test isolation, the core framework is working and can be easily extended to cover more scenarios.
 

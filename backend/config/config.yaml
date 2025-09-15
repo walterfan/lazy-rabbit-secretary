@@ -1,13 +1,13 @@
 server:
   port: 9090
-  webroot: "../frontend/build/index.html"
+  webroot: "../frontend/dist/index.html"
   tls:
     cert_file: "certs/certificate.pem"
     key_file: "certs/private.pem"
 static_routes:
   public:
-    - path: "/static"
-      dir: "../frontend/build/static"
+    - path: "/web"
+      dir: "../frontend/dist"
   private:
     - path: "/diary"
       dir: "../doc/build/html"
@@ -21,7 +21,7 @@ commands:
   - name: "write_blog"
     desc: "write a blog"
 tasks:
-  - name: "Task 1"
-    schedule: "0 0 * * * *"  # Every 1 hour
-    command: "echo 'Hello from Task 1'"
+  - name: "check task"
+    schedule: "0 0 * * * *"  # Every 1 minute
+    function: "checkTask"
 

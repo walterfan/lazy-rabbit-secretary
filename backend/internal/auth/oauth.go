@@ -24,7 +24,7 @@ type OAuthClient struct {
 	RedirectURIs []string  `json:"redirect_uris"`
 	Scopes       []string  `json:"scopes"`
 	CreatedBy    string    `json:"created_by"`
-	CreatedTime  time.Time `json:"created_time"`
+	CreatedAt    time.Time `json:"created_at"`
 	IsActive     bool      `json:"is_active"`
 }
 
@@ -88,7 +88,7 @@ func (o *OAuth2Manager) RegisterClient(client *OAuthClient) error {
 		client.Secret = generateRandomString(64)
 	}
 
-	client.CreatedTime = time.Now()
+	client.CreatedAt = time.Now()
 	o.clients[client.ID] = client
 	return nil
 }

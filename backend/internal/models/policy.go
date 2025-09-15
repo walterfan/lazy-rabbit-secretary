@@ -14,26 +14,26 @@ type Policy struct {
 	Description string         `json:"description" gorm:"type:text"`
 	Version     string         `json:"version" gorm:"default:'2012-10-17';type:text"` // AWS policy version format
 	CreatedBy   string         `json:"created_by" gorm:"type:text"`
-	CreatedTime time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // Statement represents AWS-style policy statements
 type Statement struct {
-	ID          string         `json:"id" gorm:"primaryKey;type:text"`
-	PolicyID    string         `json:"policy_id" gorm:"not null;type:text;index"`
-	SID         string         `json:"sid" gorm:"type:text"` // Statement ID (optional)
-	Effect      string         `json:"effect" gorm:"not null;type:text;check:effect IN ('Allow', 'Deny')"`
-	Actions     string         `json:"actions" gorm:"not null;type:text"`   // JSON array as string
-	Resources   string         `json:"resources" gorm:"not null;type:text"` // JSON array as string
-	Conditions  string         `json:"conditions" gorm:"type:text"`         // JSON string (optional)
-	CreatedBy   string         `json:"created_by" gorm:"type:text"`
-	CreatedTime time.Time      `json:"created_time" gorm:"autoCreateTime"`
-	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID         string         `json:"id" gorm:"primaryKey;type:text"`
+	PolicyID   string         `json:"policy_id" gorm:"not null;type:text;index"`
+	SID        string         `json:"sid" gorm:"type:text"` // Statement ID (optional)
+	Effect     string         `json:"effect" gorm:"not null;type:text;check:effect IN ('Allow', 'Deny')"`
+	Actions    string         `json:"actions" gorm:"not null;type:text"`   // JSON array as string
+	Resources  string         `json:"resources" gorm:"not null;type:text"` // JSON array as string
+	Conditions string         `json:"conditions" gorm:"type:text"`         // JSON string (optional)
+	CreatedBy  string         `json:"created_by" gorm:"type:text"`
+	CreatedAt  time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedBy  string         `json:"updated_by" gorm:"type:text"`
+	UpdatedAt  time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // UserRole represents the user_role join table
@@ -62,8 +62,8 @@ type ResourcePolicy struct {
 	ResourceID   string         `json:"resource_id" gorm:"not null;type:text"`   // Reference to the actual resource
 	PolicyID     string         `json:"policy_id" gorm:"not null;type:text"`
 	CreatedBy    string         `json:"created_by" gorm:"type:text"`
-	CreatedTime  time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt    time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy    string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime  time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt    time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }

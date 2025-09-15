@@ -1,4 +1,4 @@
-# Authentication & Authorization System
+# Authentication & Authorization Module
 
 A comprehensive, production-ready authentication and authorization system built with Go, Gin, and JWT, featuring multi-tenant support and AWS-style policy-based access control.
 
@@ -341,6 +341,74 @@ type JWTConfig struct {
     RefreshTokenTTL time.Duration
 }
 ```
+
+## Refresh Token Mechanism
+
+
+### **Modules:**
+
+1. **HTTP Interceptor** (`/frontend/src/utils/httpInterceptor.ts`):
+   - `HttpInterceptor` class that wraps all API calls
+   - Automatic 401 detection and token refresh
+   - Request queuing during refresh to prevent race conditions
+   - Automatic retry of failed requests after successful refresh
+   - Fallback to login page if refresh fails
+
+2. **Enhanced Auth Store** (`authStore.ts`):
+   - Improved `refreshAuth()` method with better error handling
+   - Support for rotating refresh tokens
+   - Better logging for debugging
+
+### **How It Works:**
+
+1. **API Call Made**: Any store method calls `makeAuthenticatedRequest()`
+2. **Request Sent**: Interceptor adds Authorization header and sends request
+3. **401 Detected**: If response is 401, interceptor triggers refresh flow
+4. **Token Refresh**: Calls `/api/v1/auth/refresh` with refresh token
+5. **Queue Management**: Other requests wait in queue during refresh
+6. **Retry Request**: Original request is retried with new access token
+7. **Success**: User continues working seamlessly
+8. **Failure**: User is redirected to login page
+
+### **Updated Stores:**
+
+**taskStore.ts** - All methods now use automatic refresh:
+- `fetchTasks()`, `getTask()`, `addTask()`, `updateTask()`, `deleteTask()`
+- `startTask()`, `completeTask()`, `failTask()`
+- `getUpcomingTasks()`, `getOverdueTasks()`
+
+**secretStore.ts** - All methods now use automatic refresh:
+- `fetchSecrets()`, `createSecret()`, `updateSecret()`, `deleteSecret()`
+- `copySecretValue()`
+
+**authStore.ts** - Admin methods now use automatic refresh:
+- `getRegistrations()`, `getRegistrationStats()`, `approveRegistration()`
+
+### **Key Features:**
+
+✅ **Seamless Experience**: Users never see "Please log in again" errors
+✅ **Race Condition Prevention**: Multiple requests don't trigger multiple refreshes
+✅ **Automatic Retry**: Failed requests are automatically retried after refresh
+✅ **Fallback Handling**: If refresh fails, user is redirected to login
+✅ **No Code Changes Required**: Existing components work without modification
+✅ **Debugging Support**: Console logging for troubleshooting
+
+### **Benefits:**
+
+- **Better UX**: No interruption when tokens expire
+- **Reduced Support**: Fewer "session expired" complaints
+- **Automatic Recovery**: System handles token lifecycle automatically
+- **Security**: Tokens are refreshed before they fully expire
+- **Performance**: Failed requests are retried instead of requiring user action
+
+### **Usage:**
+
+The system is now fully automatic! All existing API calls will automatically:
+1. Refresh tokens when they expire
+2. Retry failed requests
+3. Redirect to login only when refresh fails
+
+No changes needed in components - the automatic refresh works transparently!
 
 ## 🧪 Testing
 

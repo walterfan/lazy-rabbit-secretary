@@ -32,9 +32,9 @@ type User struct {
 	EmailConfirmedAt       *time.Time     `json:"email_confirmed_at"`
 	ConfirmationExpiresAt  *time.Time     `json:"-" gorm:"index"` // Don't expose expiry in JSON
 	CreatedBy              string         `json:"created_by" gorm:"type:text"`
-	CreatedTime            time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt              time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy              string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime            time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt              time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt              gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

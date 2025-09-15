@@ -16,6 +16,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/secret"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/metrics"
 )
 
@@ -147,6 +149,17 @@ func (thiz *WebApiService) Run() {
 
 	// Register auth routes
 	thiz.setupAuthRoutes(r)
+
+	// Register secret routes
+	repo := secret.NewSecretRepository()
+	secretService := secret.NewSecretService(repo)
+	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
+	secret.RegisterRoutes(r, secretService, authMiddleware)
+
+	// Register task routes
+	taskRepo := task.NewTaskRepository()
+	taskService := task.NewTaskService(taskRepo)
+	task.RegisterRoutes(r, taskService, authMiddleware)
 
 	// Default route for SPA
 	r.NoRoute(func(ctx *gin.Context) {

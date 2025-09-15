@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/service"
 )
 
 var cronjob = &cobra.Command{
@@ -10,8 +10,8 @@ var cronjob = &cobra.Command{
 	Short: "Check scheduled tasks and manage task expiry",
 	Long:  "Runs cron jobs and monitors task expiries using Redis.",
 	Run: func(cmd *cobra.Command, args []string) {
-		// Initialize TaskManager and start checking tasks
-		tm := &task.TaskManager{}
+		// Initialize JobManager and start checking tasks
+		tm := &service.JobManager{}
 		tm.CheckTasks()
 	},
 }

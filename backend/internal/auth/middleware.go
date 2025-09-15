@@ -219,21 +219,21 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 }
 
 // GetCurrentUser extracts the current user ID from context
-func GetCurrentUser(c *gin.Context) (uuid.UUID, bool) {
+func GetCurrentUser(c *gin.Context) (string, bool) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		return uuid.Nil, false
+		return "", false
 	}
-	return userID.(uuid.UUID), true
+	return userID.(string), true
 }
 
 // GetCurrentRealm extracts the current realm ID from context
-func GetCurrentRealm(c *gin.Context) (uuid.UUID, bool) {
+func GetCurrentRealm(c *gin.Context) (string, bool) {
 	realmID, exists := c.Get("realm_id")
 	if !exists {
-		return uuid.Nil, false
+		return "", false
 	}
-	return realmID.(uuid.UUID), true
+	return realmID.(string), true
 }
 
 // GetCurrentUsername extracts the current username from context

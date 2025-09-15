@@ -1,10 +1,9 @@
-package task
+package service
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -27,17 +26,17 @@ type Config struct {
 	Tasks []Task `yaml:"tasks"`
 }
 
-// TaskManager struct to encapsulate task-related functions
-type TaskManager struct {
+// JobManager struct to encapsulate task-related functions
+type JobManager struct {
 	config *Config
 	logger *zap.SugaredLogger
 	ctx    context.Context
 	rdb    *redis.Client
 }
 
-func NewTaskManager(logger *zap.Logger, redisClient *redis.Client) *TaskManager {
+func NewJobManager(logger *zap.Logger, redisClient *redis.Client) *JobManager {
 
-	return &TaskManager{
+	return &JobManager{
 		config: nil,
 		logger: logger.Sugar(),
 		ctx:    context.Background(),
@@ -46,7 +45,7 @@ func NewTaskManager(logger *zap.Logger, redisClient *redis.Client) *TaskManager 
 }
 
 // Load configuration from the YAML file
-func (tm *TaskManager) loadConfig() error {
+func (tm *JobManager) loadConfig() error {
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
@@ -57,8 +56,8 @@ func (tm *TaskManager) loadConfig() error {
 	return nil
 }
 
-// Define the function to check the URL
-func (tm *TaskManager) check(url string) {
+// Define the function to checkTask the URL
+func (tm *JobManager) checkTask(url string) {
 	// Perform a basic HTTP GET request to check if the URL is reachable
 	resp, err := http.Get(url)
 	if err != nil {
@@ -70,33 +69,20 @@ func (tm *TaskManager) check(url string) {
 	tm.logger.Infof("Checked URL %s with status code: %d", url, resp.StatusCode)
 }
 
-// Function to execute a command in the shell
-func (tm *TaskManager) executeCommand(command string) {
-	// Execute the command using exec.Command
-	cmd := exec.Command("sh", "-c", command)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		tm.logger.Infof("Error executing command '%s': %v", command, err)
-	}
-	tm.logger.Infof("Output of command '%s': %s", command, string(output))
-}
-
 // Function to map the function name to the actual Go function
-func (tm *TaskManager) executeFunction(functionName, param string) {
+func (tm *JobManager) executeFunction(functionName, param string) {
 	// Remove the "()" from the function name
 	functionName = strings.TrimSuffix(functionName, "()")
 
 	tm.logger.Infof("Executing function '%s' with parameter '%s'", functionName, param)
 	// Map the function name to the corresponding function
-	if functionName == "check" {
-		tm.check(param)
-	} else if functionName == "executeCommand" {
-		tm.executeCommand(param)
+	if functionName == "checkTask" {
+		tm.checkTask(param)
 	} else {
 		tm.logger.Infof("No predefined function: %s", functionName)
 	}
 
-	handler, exists := taskHandlers[functionName]
+	handler, exists := JobHandlers[functionName]
 	if !exists {
 		tm.logger.Infof("No plugin found for: %s", functionName)
 		return
@@ -108,7 +94,7 @@ func (tm *TaskManager) executeFunction(functionName, param string) {
 }
 
 // Read unfinished tasks from Redis
-func (tm *TaskManager) readUnfinishedTasks() ([]string, error) {
+func (tm *JobManager) readUnfinishedTasks() ([]string, error) {
 	keys, err := tm.rdb.Keys(tm.ctx, "task:*").Result()
 	if err != nil {
 		return nil, err
@@ -117,12 +103,12 @@ func (tm *TaskManager) readUnfinishedTasks() ([]string, error) {
 }
 
 // Publish task expiry event to Redis
-func (tm *TaskManager) publishTaskExpiryEvent(taskID string) error {
+func (tm *JobManager) publishTaskExpiryEvent(taskID string) error {
 	return tm.rdb.Publish(tm.ctx, "task_expiry_channel", taskID).Err()
 }
 
 // Check task expiry and publish events
-func (tm *TaskManager) checkTaskExpiry() {
+func (tm *JobManager) checkTaskExpiry() {
 	tasks, err := tm.readUnfinishedTasks()
 	if err != nil {
 		tm.logger.Infof("Failed to read unfinished tasks: %v", err)
@@ -149,7 +135,7 @@ func (tm *TaskManager) checkTaskExpiry() {
 }
 
 // Check tasks and set expiry times
-func (tm *TaskManager) CheckTasks() {
+func (tm *JobManager) CheckTasks() {
 	// Load configuration from the YAML file
 	if err := tm.loadConfig(); err != nil {
 		tm.logger.Fatalf("Failed to load config: %v", err)

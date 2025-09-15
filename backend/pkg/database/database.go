@@ -13,6 +13,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -60,8 +61,8 @@ func loadDatabaseConfig() *DatabaseConfig {
 		Type:     getEnvOrDefault("DB_TYPE", "sqlite"),
 		Host:     getEnvOrDefault("DB_HOST", "localhost"),
 		Port:     getEnvIntOrDefault("DB_PORT", 5432),
-		Username: getEnvOrDefault("DB_USERNAME", ""),
-		Password: getEnvOrDefault("DB_PASSWORD", ""),
+		Username: getEnvOrDefault("DB_USER", ""),
+		Password: getEnvOrDefault("DB_PASS", ""),
 		Database: getEnvOrDefault("DB_NAME", "lazy-rabbit-reminder"),
 		SSLMode:  getEnvOrDefault("DB_SSL_MODE", "disable"),
 		Charset:  getEnvOrDefault("DB_CHARSET", "utf8mb4"),
@@ -122,7 +123,9 @@ func connectSQLite(config *DatabaseConfig) (*gorm.DB, error) {
 	}
 
 	log.Printf("Connecting to SQLite database: %s", dsn)
-	return gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	return gorm.Open(sqlite.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 }
 
 // connectPostgreSQL establishes PostgreSQL connection
@@ -135,7 +138,9 @@ func connectPostgreSQL(config *DatabaseConfig) (*gorm.DB, error) {
 		config.Host, config.Port, config.Username, config.Password, config.Database, config.SSLMode)
 
 	log.Printf("Connecting to PostgreSQL database: %s:%d/%s", config.Host, config.Port, config.Database)
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	return gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 }
 
 // connectMySQL establishes MySQL connection
@@ -148,7 +153,9 @@ func connectMySQL(config *DatabaseConfig) (*gorm.DB, error) {
 		config.Username, config.Password, config.Host, config.Port, config.Database, config.Charset)
 
 	log.Printf("Connecting to MySQL database: %s:%d/%s", config.Host, config.Port, config.Database)
-	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	return gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 }
 
 // InitData initializes database with default data (legacy function)

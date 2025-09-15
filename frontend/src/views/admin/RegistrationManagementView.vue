@@ -135,10 +135,10 @@
                         </span>
                       </td>
                       <td>
-                        <small>{{ formatDate(user.created_time) }}</small>
+                        <small>{{ formatDate(user.created_at) }}</small>
                       </td>
                       <td>
-                        <small>{{ formatDate(user.updated_time) }}</small>
+                        <small>{{ formatDate(user.updated_at) }}</small>
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm" role="group">
@@ -270,51 +270,55 @@
               <div class="col-md-6">
                 <h6>Basic Information</h6>
                 <table class="table table-sm">
-                  <tr>
-                    <td><strong>ID:</strong></td>
-                    <td><small class="font-monospace">{{ selectedUser.id }}</small></td>
-                  </tr>
-                  <tr>
-                    <td><strong>Username:</strong></td>
-                    <td>{{ selectedUser.username }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Email:</strong></td>
-                    <td>{{ selectedUser.email }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Realm ID:</strong></td>
-                    <td><small class="font-monospace">{{ selectedUser.realm_id }}</small></td>
-                  </tr>
+                  <tbody>
+                    <tr>
+                      <td><strong>ID:</strong></td>
+                      <td><small class="font-monospace">{{ selectedUser.id }}</small></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Username:</strong></td>
+                      <td>{{ selectedUser.username }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Email:</strong></td>
+                      <td>{{ selectedUser.email }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Realm ID:</strong></td>
+                      <td><small class="font-monospace">{{ selectedUser.realm_id }}</small></td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
               <div class="col-md-6">
                 <h6>Status Information</h6>
                 <table class="table table-sm">
-                  <tr>
-                    <td><strong>Status:</strong></td>
-                    <td>
-                      <span class="badge" :class="getStatusBadgeClass(selectedUser.status)">
-                        {{ selectedUser.status.charAt(0).toUpperCase() + selectedUser.status.slice(1) }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Active:</strong></td>
-                    <td>
-                      <span class="badge" :class="selectedUser.is_active ? 'bg-success' : 'bg-secondary'">
-                        {{ selectedUser.is_active ? 'Yes' : 'No' }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Created:</strong></td>
-                    <td>{{ formatDate(selectedUser.created_time) }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Updated:</strong></td>
-                    <td>{{ formatDate(selectedUser.updated_time) }}</td>
-                  </tr>
+                  <tbody>
+                    <tr>
+                      <td><strong>Status:</strong></td>
+                      <td>
+                        <span class="badge" :class="getStatusBadgeClass(selectedUser.status)">
+                          {{ selectedUser.status.charAt(0).toUpperCase() + selectedUser.status.slice(1) }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Active:</strong></td>
+                      <td>
+                        <span class="badge" :class="selectedUser.is_active ? 'bg-success' : 'bg-secondary'">
+                          {{ selectedUser.is_active ? 'Yes' : 'No' }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Created:</strong></td>
+                      <td>{{ formatDate(selectedUser.created_at) }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Updated:</strong></td>
+                      <td>{{ formatDate(selectedUser.updated_at) }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
             </div>
@@ -340,9 +344,9 @@ interface User {
   is_active: boolean
   status: 'pending' | 'approved' | 'denied' | 'suspended'
   created_by: string
-  created_time: string
+  created_at: string
   updated_by: string
-  updated_time: string
+  updated_at: string
 }
 
 interface RegistrationResponse {

@@ -10,8 +10,12 @@ A comprehensive guide to Redis setup, configuration, and usage in the Lazy Rabbi
 4. [Basic Commands](#basic-commands)
 5. [Data Types & Operations](#data-types--operations)
 6. [Advanced Features](#advanced-features)
-7. [Performance & Monitoring](#performance--monitoring)
-8. [Troubleshooting](#troubleshooting)
+7. [Application Integration](#application-integration)
+8. [Performance & Monitoring](#performance--monitoring)
+9. [Security Recommendations](#security-recommendations)
+10. [Troubleshooting](#troubleshooting)
+11. [Quick Reference](#quick-reference)
+12. [Summary](#summary)
 
 ## What is Redis?
 

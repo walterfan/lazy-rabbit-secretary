@@ -18,9 +18,9 @@ type Project struct {
 	Language    string         `json:"language" gorm:"type:text"`
 	EntryPoint  string         `json:"entry_point" gorm:"column:entry_point;type:text"`
 	CreatedBy   string         `json:"created_by" gorm:"type:text"`
-	CreatedTime time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
@@ -33,9 +33,9 @@ type Code struct {
 	Code            string         `json:"code" gorm:"not null;type:text"`
 	VectorEmbedding string         `json:"vector_embedding" gorm:"column:vector_embedding;type:text"` // Store vector as JSON string
 	CreatedBy       string         `json:"created_by" gorm:"type:text"`
-	CreatedTime     time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt      time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy       string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime     time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt       time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
@@ -49,8 +49,8 @@ type Document struct {
 	Content         string         `json:"content" gorm:"not null;type:text"`
 	VectorEmbedding string         `json:"vector_embedding" gorm:"column:vector_embedding;type:text"` // Store vector as JSON string
 	CreatedBy       string         `json:"created_by" gorm:"type:text"`
-	CreatedTime     time.Time      `json:"created_time" gorm:"autoCreateTime"`
+	CreatedAt      time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedBy       string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime     time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
+	UpdatedAt       time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 }

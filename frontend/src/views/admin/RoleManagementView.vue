@@ -45,7 +45,7 @@
                     <td>{{ role.name }}</td>
                     <td>{{ role.description }}</td>
                     <td>{{ role.realm_id }}</td>
-                    <td>{{ formatDate(role.created_time) }}</td>
+                    <td>{{ formatDate(role.created_at) }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-primary me-1" @click="editRole(role)">
                         <i class="bi bi-pencil"></i>
@@ -188,8 +188,8 @@ interface Role {
   name: string;
   description: string;
   realm_id: string;
-  created_time: string;
-  updated_time: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Policy {

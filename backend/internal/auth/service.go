@@ -159,7 +159,7 @@ func (a *AuthService) RefreshToken(req models.RefreshRequest) (*models.LoginResp
 }
 
 // RegisterUser creates a new user account
-func (a *AuthService) RegisterUser(req models.CreateUserRequest, createdBy uuid.UUID) (*models.User, error) {
+func (a *AuthService) RegisterUser(req models.CreateUserRequest, createdBy string) (*models.User, error) {
 	// Parse realm ID
 	realm, err := a.userService.GetRealmByName(req.RealmName)
 	if err != nil {
@@ -192,10 +192,10 @@ func (a *AuthService) RegisterUser(req models.CreateUserRequest, createdBy uuid.
 		HashedPassword: hashedPassword,
 		IsActive:       false,
 		Status:         models.UserStatusPending,
-		CreatedBy:      createdBy.String(),
-		CreatedTime:    time.Now(),
-		UpdatedBy:      createdBy.String(),
-		UpdatedTime:    time.Now(),
+		CreatedBy:      createdBy,
+		CreatedAt:      time.Now(),
+		UpdatedBy:      createdBy,
+		UpdatedAt:      time.Now(),
 	}
 
 	// Generate email confirmation token
@@ -273,7 +273,7 @@ func (a *AuthService) ApproveRegistration(req models.ApproveRegistrationRequest,
 	}
 
 	user.UpdatedBy = approvedBy
-	user.UpdatedTime = time.Now()
+	user.UpdatedAt = time.Now()
 
 	// Save the updated user
 	if err := a.userService.UpdateUser(user); err != nil {
@@ -361,7 +361,7 @@ func (a *AuthService) sendNewRegistrationNotification(user *models.User) error {
 		"Username":         user.Username,
 		"Email":            user.Email,
 		"RealmID":          user.RealmID,
-		"RegistrationTime": user.CreatedTime.Format("2006-01-02 15:04:05"),
+		"RegistrationTime": user.CreatedAt.Format("2006-01-02 15:04:05"),
 		"Status":           string(user.Status),
 		"AdminPanelURL":    appConfig.AdminPanelURL,
 	}
@@ -509,9 +509,9 @@ func (s *SimpleUserService) GetUserRoles(userID string) ([]*models.Role, error) 
 			Name:        role.Name,
 			Description: role.Description,
 			CreatedBy:   role.CreatedBy,
-			CreatedTime: role.CreatedTime,
+			CreatedAt:   role.CreatedAt,
 			UpdatedBy:   role.UpdatedBy,
-			UpdatedTime: role.UpdatedTime,
+			UpdatedAt:   role.UpdatedAt,
 		})
 	}
 
@@ -530,9 +530,9 @@ func (s *SimpleUserService) CreateUser(user *models.User) error {
 		HashedPassword: user.HashedPassword,
 		IsActive:       user.IsActive,
 		CreatedBy:      user.CreatedBy,
-		CreatedTime:    user.CreatedTime,
+		CreatedAt:      user.CreatedAt,
 		UpdatedBy:      user.UpdatedBy,
-		UpdatedTime:    user.UpdatedTime,
+		UpdatedAt:      user.UpdatedAt,
 	}
 
 	result := db.Create(&modelUser)
@@ -555,9 +555,9 @@ func (s *SimpleUserService) UpdateUser(user *models.User) error {
 		HashedPassword: user.HashedPassword,
 		IsActive:       user.IsActive,
 		CreatedBy:      user.CreatedBy,
-		CreatedTime:    user.CreatedTime,
+		CreatedAt:      user.CreatedAt,
 		UpdatedBy:      user.UpdatedBy,
-		UpdatedTime:    user.UpdatedTime,
+		UpdatedAt:      user.UpdatedAt,
 	}
 
 	result := db.Save(&modelUser)
@@ -626,9 +626,9 @@ func (s *SimplePolicyService) GetUserPolicies(userID, realmID string) ([]*models
 			Description: policy.Description,
 			Version:     policy.Version,
 			CreatedBy:   policy.CreatedBy,
-			CreatedTime: policy.CreatedTime,
+			CreatedAt:   policy.CreatedAt,
 			UpdatedBy:   policy.UpdatedBy,
-			UpdatedTime: policy.UpdatedTime,
+			UpdatedAt:   policy.UpdatedAt,
 		})
 	}
 
@@ -675,9 +675,9 @@ func (s *SimplePolicyService) GetUserPolicies(userID, realmID string) ([]*models
 				Description: policy.Description,
 				Version:     policy.Version,
 				CreatedBy:   policy.CreatedBy,
-				CreatedTime: policy.CreatedTime,
+				CreatedAt:   policy.CreatedAt,
 				UpdatedBy:   policy.UpdatedBy,
-				UpdatedTime: policy.UpdatedTime,
+				UpdatedAt:   policy.UpdatedAt,
 			})
 		}
 	}
@@ -721,17 +721,17 @@ func (s *SimplePolicyService) GetPolicyStatements(policyID string) ([]*models.St
 		}
 
 		statements = append(statements, &models.Statement{
-			ID:          stmt.ID,
-			PolicyID:    policyID,
-			SID:         stmt.SID,
-			Effect:      stmt.Effect,
-			Actions:     marshalJSON(actions),
-			Resources:   marshalJSON(resources),
-			Conditions:  marshalJSON(conditions),
-			CreatedBy:   stmt.CreatedBy,
-			CreatedTime: stmt.CreatedTime,
-			UpdatedBy:   stmt.UpdatedBy,
-			UpdatedTime: stmt.UpdatedTime,
+			ID:         stmt.ID,
+			PolicyID:   policyID,
+			SID:        stmt.SID,
+			Effect:     stmt.Effect,
+			Actions:    marshalJSON(actions),
+			Resources:  marshalJSON(resources),
+			Conditions: marshalJSON(conditions),
+			CreatedBy:  stmt.CreatedBy,
+			CreatedAt:  stmt.CreatedAt,
+			UpdatedBy:  stmt.UpdatedBy,
+			UpdatedAt:  stmt.UpdatedAt,
 		})
 	}
 
@@ -789,7 +789,7 @@ func (s *SimpleUserService) GetUserRegistrations(req models.UserRegistrationRequ
 
 	// Apply pagination
 	offset := (page - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Order("created_time DESC").Find(&users).Error; err != nil {
+	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("failed to get users: %w", err)
 	}
 

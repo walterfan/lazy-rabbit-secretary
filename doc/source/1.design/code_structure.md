@@ -64,7 +64,7 @@ webService := api.NewWebApiService(logger, rdb, GetAuthService())
 go webService.Run()
 
 // Start Task Manager
-tm := task.NewTaskManager(logger, rdb)
+tm := task.NewJobManager(logger, rdb)
 go tm.CheckTasks()
 
 // Wait for shutdown signal

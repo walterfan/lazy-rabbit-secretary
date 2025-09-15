@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
 )
 
@@ -86,8 +85,8 @@ func (h *AuthHandlers) Register(c *gin.Context) {
 	// Get current user from context (for created_by field)
 	currentUserID, exists := GetCurrentUser(c)
 	if !exists {
-		// For public registration, use a system user ID or nil
-		currentUserID = uuid.Nil
+		// For public registration, use a system user ID or empty string
+		currentUserID = ""
 	}
 
 	user, err := h.authService.RegisterUser(req, currentUserID)
@@ -207,13 +206,13 @@ func (h *AuthHandlers) CheckPermission(c *gin.Context) {
 	}
 
 	// Add user context
-	context["user:id"] = userID.String()
-	context["user:realm_id"] = realmID.String()
+	context["user:id"] = userID
+	context["user:realm_id"] = realmID
 	context["user:username"] = c.GetString("username")
 	context["user:email"] = c.GetString("email")
 	context["user:roles"] = c.GetStringSlice("roles")
 
-	allowed, err := h.authService.CheckPermission(userID.String(), realmID.String(), action, resource, context)
+	allowed, err := h.authService.CheckPermission(userID, realmID, action, resource, context)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check permissions"})
 		return
@@ -377,7 +376,7 @@ func (h *AuthHandlers) ApproveRegistration(c *gin.Context) {
 		return
 	}
 
-	response, err := h.authService.ApproveRegistration(req, currentUserID.String())
+	response, err := h.authService.ApproveRegistration(req, currentUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process registration approval", "details": err.Error()})
 		return

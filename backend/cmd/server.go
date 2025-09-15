@@ -15,7 +15,7 @@ import (
 
 	"github.com/walterfan/lazy-rabbit-reminder/internal/api"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/service"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
 )
@@ -32,7 +32,7 @@ var serverCmd = &cobra.Command{
 		if err := database.InitDB(); err != nil {
 			logger.Fatal("Failed to initialize database", zap.Error(err))
 		}
-
+		logger.Info("Database initialized, will init data")
 		// Initialize data (prompts, default user, etc.)
 		if err := database.InitData(); err != nil {
 			logger.Fatal("Failed to initialize database data", zap.Error(err))
@@ -53,8 +53,8 @@ var serverCmd = &cobra.Command{
 		webService := api.NewWebApiService(logger, rdb, authService)
 		go webService.Run()
 
-		logger.Info("Starting Task service...")
-		tm := task.NewTaskManager(logger, rdb)
+		logger.Info("Starting Job Manager...")
+		tm := service.NewJobManager(logger, rdb)
 		go tm.CheckTasks()
 
 		signalChan := make(chan os.Signal, 1)
@@ -89,7 +89,7 @@ func initRedis(logger *zap.Logger) *redis.Client {
 	}).Err()
 
 	if err != nil {
-		logger.Fatal("Error adding news to Redis",
+		logger.Error("Error adding news to Redis",
 			zap.Error(err),
 		)
 	}

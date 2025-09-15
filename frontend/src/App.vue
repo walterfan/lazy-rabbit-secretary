@@ -17,10 +17,22 @@
               <i class="bi bi-house"></i> Home
             </router-link>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="isAuthenticated">
             <router-link class="nav-link" to="/tasks">
               <i class="bi bi-list-task"></i> Tasks
             </router-link>
+          </li>
+          <li class="nav-item dropdown" v-if="isAuthenticated">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-tools"></i> Tools
+            </a>
+            <ul class="dropdown-menu">
+              <li>
+                <router-link class="dropdown-item" to="/secrets">
+                  <i class="bi bi-shield-lock"></i> Secrets
+                </router-link>
+              </li>
+            </ul>
           </li>
           <li class="nav-item dropdown" v-if="isAuthenticated">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
