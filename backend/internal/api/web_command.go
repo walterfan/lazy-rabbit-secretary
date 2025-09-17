@@ -3,10 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/util"
 )
 
@@ -29,7 +29,7 @@ func ReadOverSSH(parameters string) (string, error) {
 
 	// Parse the JSON parameters
 	if err := json.Unmarshal([]byte(parameters), &params); err != nil {
-		log.Printf("Error parsing parameters: %v", err)
+		log.GetLogger().Errorf("Error parsing parameters: %v", err)
 		//return "", fmt.Errorf("invalid parameters: %w", err)
 	}
 
@@ -39,7 +39,7 @@ func ReadOverSSH(parameters string) (string, error) {
 	if portStr != "" {
 		port, err = strconv.Atoi(portStr)
 		if err != nil {
-			log.Printf("Invalid SSH_PORT value: %v", err)
+			log.GetLogger().Errorf("Invalid SSH_PORT value: %v", err)
 			return "", fmt.Errorf("invalid SSH_PORT: %w", err)
 		}
 	}
@@ -55,14 +55,14 @@ func ReadOverSSH(parameters string) (string, error) {
 	// Establish SSH connection
 	client, err := util.NewSSHClient(params.Host, params.Port, params.Username, params.Password)
 	if err != nil {
-		log.Printf("Error connecting: %v", err)
+		log.GetLogger().Errorf("Error connecting: %v", err)
 		return "", fmt.Errorf("ssh connection failed: %w", err)
 	}
 
 	// Read remote file
 	content, err := client.ReadFile(params.FilePath)
 	if err != nil {
-		log.Printf("Error reading file: %v", err)
+		log.GetLogger().Errorf("Error reading file: %v", err)
 		return "", fmt.Errorf("file read failed: %w", err)
 	}
 

@@ -195,3 +195,21 @@ type Reminder struct {
 	UpdatedAt     time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
+
+// TaskReminder represents the mapping between tasks and reminders
+type TaskReminder struct {
+	ID         string         `json:"id" gorm:"primaryKey;type:text"`
+	TaskID     string         `json:"task_id" gorm:"not null;type:text;index"`
+	ReminderID string         `json:"reminder_id" gorm:"not null;type:text;index"`
+	CreatedAt  time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+
+	// Foreign key relationships
+	Task     Task     `json:"task" gorm:"foreignKey:TaskID;references:ID"`
+	Reminder Reminder `json:"reminder" gorm:"foreignKey:ReminderID;references:ID"`
+}
+
+// TableName returns the table name for TaskReminder
+func (TaskReminder) TableName() string {
+	return "task_reminders"
+}

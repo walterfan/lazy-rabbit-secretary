@@ -1,4 +1,4 @@
-package service
+package jobs
 
 import (
 	"time"
@@ -46,6 +46,34 @@ func (tqs *TaskQueryService) CreateTaskInstance(task *models.Task) error {
 func (tqs *TaskQueryService) FindTaskInstancesAfterTime(parentTaskID string, afterTime time.Time) ([]*models.Task, error) {
 	var tasks []*models.Task
 	err := tqs.db.Where("parent_task_id = ? AND schedule_time > ?", parentTaskID, afterTime).Find(&tasks).Error
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+// FindTasksDueForReminders finds tasks that are scheduled soon and may need reminders
+func (tqs *TaskQueryService) FindTasksDueForReminders(beforeTime time.Time) ([]*models.Task, error) {
+	var tasks []*models.Task
+	// Convert times to UTC for consistent database queries
+	nowUTC := time.Now().UTC()
+	beforeTimeUTC := beforeTime.UTC()
+
+	// Find tasks that:
+	// 1. Are scheduled between now and the specified time
+	// 2. Have generate_reminders = true
+	// 3. Don't already have reminders created (check via task_reminders mapping table)
+	err := tqs.db.Where(`
+		schedule_time > ? AND schedule_time <= ?
+		AND generate_reminders = true
+		AND reminder_methods != ''
+		AND NOT EXISTS (
+			SELECT 1 FROM task_reminders tr
+			JOIN reminders r ON tr.reminder_id = r.id
+			WHERE tr.task_id = tasks.id
+			AND r.status IN ('pending', 'sent', 'active')
+		)`, nowUTC, beforeTimeUTC).Find(&tasks).Error
+
 	if err != nil {
 		return nil, err
 	}

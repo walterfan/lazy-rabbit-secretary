@@ -80,6 +80,7 @@ func GetAllModels() []interface{} {
 		&Secret{},
 		&Task{},
 		&Reminder{},
+		&TaskReminder{},
 	}
 }
 

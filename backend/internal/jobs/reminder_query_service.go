@@ -1,4 +1,4 @@
-package service
+package jobs
 
 import (
 	"time"
@@ -23,7 +23,9 @@ func NewReminderQueryService(db *gorm.DB) *ReminderQueryService {
 // FindDueReminders retrieves reminders that are due for processing
 func (rqs *ReminderQueryService) FindDueReminders(beforeTime time.Time) ([]*models.Reminder, error) {
 	var reminders []*models.Reminder
-	err := rqs.db.Where("status = ? AND remind_time <= ?", "pending", beforeTime).Find(&reminders).Error
+	// Convert beforeTime to UTC for consistent database queries
+	//beforeTimeUTC := beforeTime.UTC()
+	err := rqs.db.Where("status != ? AND remind_time <= ?", "completed", beforeTime).Find(&reminders).Error
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +33,9 @@ func (rqs *ReminderQueryService) FindDueReminders(beforeTime time.Time) ([]*mode
 }
 
 // UpdateReminderStatus updates the status of a reminder
-func (rqs *ReminderQueryService) UpdateReminderStatus(reminder *models.Reminder, status string) error {
+func (rqs *ReminderQueryService) UpdateReminderStatus(reminder *models.Reminder, status string, updatedBy string) error {
 	reminder.Status = status
+	reminder.UpdatedBy = updatedBy
 	reminder.UpdatedAt = time.Now()
 	return rqs.db.Save(reminder).Error
 }
@@ -50,4 +53,22 @@ func (rqs *ReminderQueryService) GetUserByID(userID string) (*models.User, error
 // CreateReminder creates a new reminder
 func (rqs *ReminderQueryService) CreateReminder(reminder *models.Reminder) error {
 	return rqs.db.Create(reminder).Error
+}
+
+// CreateTaskReminder creates a new task-reminder mapping
+func (rqs *ReminderQueryService) CreateTaskReminder(taskReminder *models.TaskReminder) error {
+	return rqs.db.Create(taskReminder).Error
+}
+
+// FindRemindersByTaskID retrieves all reminders associated with a specific task
+func (rqs *ReminderQueryService) FindRemindersByTaskID(taskID string) ([]*models.Reminder, error) {
+	var reminders []*models.Reminder
+	err := rqs.db.Table("reminders").
+		Joins("JOIN task_reminders ON reminders.id = task_reminders.reminder_id").
+		Where("task_reminders.task_id = ?", taskID).
+		Find(&reminders).Error
+	if err != nil {
+		return nil, err
+	}
+	return reminders, nil
 }

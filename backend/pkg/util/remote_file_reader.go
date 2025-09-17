@@ -2,9 +2,9 @@ package util
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -36,7 +36,7 @@ func NewSSHClient(host string, port int, username, password string) (*SSHClient,
 	addr := fmt.Sprintf("%s:%d", host, port)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		log.Printf("Failed to dial: %s by %s", addr, username)
+		log.GetLogger().Errorf("Failed to dial: %s by %s", addr, username)
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
 

@@ -1,14 +1,16 @@
-package service
+package models
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 )
 
@@ -51,20 +53,24 @@ func InitCompleteData(db *gorm.DB) error {
 		return fmt.Errorf("failed to initialize role policies: %w", err)
 	}
 
-	log.Println("Database initialization completed successfully")
+	if err := initPrompts(db); err != nil {
+		return fmt.Errorf("failed to initialize prompts: %w", err)
+	}
+
+	log.GetLogger().Info("Database initialization completed successfully")
 	return nil
 }
 
 // initRealms creates default realm
 func initRealms(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.Realm{}).Count(&count)
+	db.Model(&Realm{}).Count(&count)
 	if count > 0 {
-		log.Println("Realms already exist, skipping realm initialization")
+		log.GetLogger().Debug("Realms already exist, skipping realm initialization")
 		return nil
 	}
 
-	realms := []models.Realm{
+	realms := []Realm{
 		{
 			ID:          DEFAULT_REALM_ID,
 			Name:        "default",
@@ -78,20 +84,20 @@ func initRealms(db *gorm.DB) error {
 		return fmt.Errorf("failed to create realms: %w", result.Error)
 	}
 
-	log.Printf("Created %d default realms", len(realms))
+	log.GetLogger().Infof("Created %d default realms", len(realms))
 	return nil
 }
 
 // initRoles creates default roles
 func initRoles(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.Role{}).Count(&count)
+	db.Model(&Role{}).Count(&count)
 	if count > 0 {
-		log.Println("Roles already exist, skipping role initialization")
+		log.GetLogger().Debug("Roles already exist, skipping role initialization")
 		return nil
 	}
 
-	roles := []models.Role{
+	roles := []Role{
 		{
 			ID:          ADMIN_ROLE_ID,
 			RealmID:     DEFAULT_REALM_ID,
@@ -113,20 +119,20 @@ func initRoles(db *gorm.DB) error {
 		return fmt.Errorf("failed to create roles: %w", result.Error)
 	}
 
-	log.Printf("Created %d default roles", len(roles))
+	log.GetLogger().Infof("Created %d default roles", len(roles))
 	return nil
 }
 
 // initPolicies creates default policies
 func initPolicies(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.Policy{}).Count(&count)
+	db.Model(&Policy{}).Count(&count)
 	if count > 0 {
-		log.Println("Policies already exist, skipping policy initialization")
+		log.GetLogger().Debug("Policies already exist, skipping policy initialization")
 		return nil
 	}
 
-	policies := []models.Policy{
+	policies := []Policy{
 		{
 			ID:          ADMIN_POLICY_ID,
 			RealmID:     DEFAULT_REALM_ID,
@@ -150,16 +156,16 @@ func initPolicies(db *gorm.DB) error {
 		return fmt.Errorf("failed to create policies: %w", result.Error)
 	}
 
-	log.Printf("Created %d default policies", len(policies))
+	log.GetLogger().Infof("Created %d default policies", len(policies))
 	return nil
 }
 
 // initStatements creates default policy statements
 func initStatements(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.Statement{}).Count(&count)
+	db.Model(&Statement{}).Count(&count)
 	if count > 0 {
-		log.Println("Statements already exist, skipping statement initialization")
+		log.GetLogger().Debug("Statements already exist, skipping statement initialization")
 		return nil
 	}
 
@@ -175,7 +181,7 @@ func initStatements(db *gorm.DB) error {
 	userActionsJSON, _ := json.Marshal(userActions)
 	userResourcesJSON, _ := json.Marshal(userResources)
 
-	statements := []models.Statement{
+	statements := []Statement{
 		{
 			ID:         uuid.New().String(),
 			PolicyID:   ADMIN_POLICY_ID,
@@ -213,16 +219,16 @@ func initStatements(db *gorm.DB) error {
 		return fmt.Errorf("failed to create statements: %w", result.Error)
 	}
 
-	log.Printf("Created %d default statements", len(statements))
+	log.GetLogger().Infof("Created %d default statements", len(statements))
 	return nil
 }
 
 // initUsers creates default users
 func initUsers(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.User{}).Count(&count)
+	db.Model(&User{}).Count(&count)
 	if count > 0 {
-		log.Println("Users already exist, skipping user initialization")
+		log.GetLogger().Debug("Users already exist, skipping user initialization")
 		return nil
 	}
 
@@ -242,7 +248,7 @@ func initUsers(db *gorm.DB) error {
 		return fmt.Errorf("failed to hash user password: %w", err)
 	}
 
-	users := []models.User{
+	users := []User{
 		{
 			ID:             ADMIN_USER_ID,
 			RealmID:        DEFAULT_REALM_ID,
@@ -268,27 +274,27 @@ func initUsers(db *gorm.DB) error {
 		return fmt.Errorf("failed to create users: %w", result.Error)
 	}
 
-	log.Printf("Created %d default users", len(users))
+	log.GetLogger().Infof("Created %d default users", len(users))
 	return nil
 }
 
 // initUserRoles assigns roles to users
 func initUserRoles(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.UserRole{}).Count(&count)
+	db.Model(&UserRole{}).Count(&count)
 	if count > 0 {
-		log.Println("User roles already exist, skipping user role initialization")
+		log.GetLogger().Debug("User roles already exist, skipping user role initialization")
 		return nil
 	}
 
 	// Get the test user ID
-	var testUser models.User
+	var testUser User
 	result := db.Where("username = ? AND realm_id = ?", "testuser", DEFAULT_REALM_ID).First(&testUser)
 	if result.Error != nil {
 		return fmt.Errorf("failed to find test user: %w", result.Error)
 	}
 
-	userRoles := []models.UserRole{
+	userRoles := []UserRole{
 		{
 			UserID: ADMIN_USER_ID,
 			RoleID: ADMIN_ROLE_ID,
@@ -304,20 +310,20 @@ func initUserRoles(db *gorm.DB) error {
 		return fmt.Errorf("failed to create user roles: %w", result.Error)
 	}
 
-	log.Printf("Created %d user role assignments", len(userRoles))
+	log.GetLogger().Infof("Created %d user role assignments", len(userRoles))
 	return nil
 }
 
 // initRolePolicies assigns policies to roles
 func initRolePolicies(db *gorm.DB) error {
 	var count int64
-	db.Model(&models.RolePolicy{}).Count(&count)
+	db.Model(&RolePolicy{}).Count(&count)
 	if count > 0 {
-		log.Println("Role policies already exist, skipping role policy initialization")
+		log.GetLogger().Debug("Role policies already exist, skipping role policy initialization")
 		return nil
 	}
 
-	rolePolicies := []models.RolePolicy{
+	rolePolicies := []RolePolicy{
 		{
 			RoleID:   ADMIN_ROLE_ID,
 			PolicyID: ADMIN_POLICY_ID,
@@ -333,7 +339,73 @@ func initRolePolicies(db *gorm.DB) error {
 		return fmt.Errorf("failed to create role policies: %w", result.Error)
 	}
 
-	log.Printf("Created %d role policy assignments", len(rolePolicies))
+	log.GetLogger().Infof("Created %d role policy assignments", len(rolePolicies))
+	return nil
+}
+
+// initPrompts creates prompts from prompts.yaml file
+func initPrompts(db *gorm.DB) error {
+	var count int64
+	db.Model(&Prompt{}).Count(&count)
+	if count > 0 {
+		log.GetLogger().Info("Prompts already exist, skipping prompt initialization")
+		return nil
+	}
+
+	// Define the structure to match prompts.yaml
+	type PromptConfig struct {
+		Description  string `yaml:"description"`
+		SystemPrompt string `yaml:"system_prompt"`
+		UserPrompt   string `yaml:"user_prompt"`
+		Tags         string `yaml:"tags,omitempty"`
+	}
+
+	type PromptsData struct {
+		Prompts map[string]PromptConfig `yaml:"prompts"`
+	}
+
+	// Read prompts.yaml file
+	configPath := filepath.Join("config", "prompts.yaml")
+	yamlFile, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		log.GetLogger().Warnf("Could not read prompts.yaml file: %v", err)
+		return nil // Don't fail initialization if prompts file is missing
+	}
+
+	// Parse YAML
+	var promptsData PromptsData
+	err = yaml.Unmarshal(yamlFile, &promptsData)
+	if err != nil {
+		return fmt.Errorf("failed to parse prompts.yaml: %w", err)
+	}
+
+	// Convert to Prompt models
+	var prompts []Prompt
+	for name, config := range promptsData.Prompts {
+		prompt := Prompt{
+			ID:           uuid.New().String(),
+			Name:         name,
+			Description:  config.Description,
+			SystemPrompt: config.SystemPrompt,
+			UserPrompt:   config.UserPrompt,
+			Tags:         config.Tags,
+			CreatedBy:    "system",
+		}
+		prompts = append(prompts, prompt)
+	}
+
+	if len(prompts) == 0 {
+		log.GetLogger().Info("No prompts found in prompts.yaml")
+		return nil
+	}
+
+	// Insert prompts into database
+	result := db.Create(&prompts)
+	if result.Error != nil {
+		return fmt.Errorf("failed to create prompts: %w", result.Error)
+	}
+
+	log.GetLogger().Infof("Created %d prompts from prompts.yaml", len(prompts))
 	return nil
 }
 

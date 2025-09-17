@@ -3,13 +3,13 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"gorm.io/gorm"
 )
 
@@ -210,14 +210,14 @@ func (a *AuthService) RegisterUser(req models.CreateUserRequest, createdBy strin
 	// Send email confirmation to user
 	go func() {
 		if err := a.sendEmailConfirmation(user); err != nil {
-			log.Printf("Failed to send email confirmation: %v", err)
+			log.GetLogger().Errorf("Failed to send email confirmation: %v", err)
 		}
 	}()
 
 	// Send notification email to admin about new registration
 	go func() {
 		if err := a.sendNewRegistrationNotification(user); err != nil {
-			log.Printf("Failed to send new registration notification: %v", err)
+			log.GetLogger().Errorf("Failed to send new registration notification: %v", err)
 		}
 	}()
 
@@ -283,7 +283,7 @@ func (a *AuthService) ApproveRegistration(req models.ApproveRegistrationRequest,
 	// Send email notification
 	go func() {
 		if err := a.sendRegistrationStatusEmail(user, req.Approved, req.Reason); err != nil {
-			log.Printf("Failed to send registration status email to %s: %v", user.Email, err)
+			log.GetLogger().Errorf("Failed to send registration status email to %s: %v", user.Email, err)
 		}
 	}()
 

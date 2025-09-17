@@ -1,4 +1,4 @@
-package service
+package jobs
 
 import (
 	"context"
@@ -32,7 +32,7 @@ type CronJob struct {
 
 // Config holds the task configuration
 type Config struct {
-	Tasks []CronJob `yaml:"tasks"`
+	Jobs []CronJob `yaml:"jobs"`
 }
 
 // No duplicate structs needed - we use models.Reminder, models.User, models.Task directly
@@ -68,7 +68,7 @@ func NewJobManager(logger *zap.Logger, redisClient *redis.Client, db *gorm.DB) *
 		logger.Sugar().Warnf("Failed to initialize email sender: %v. Email notifications will be disabled.", err)
 	}
 
-	return &JobManager{
+	jm := &JobManager{
 		config:               nil, // Will be loaded later
 		logger:               logger.Sugar(),
 		ctx:                  context.Background(),
@@ -78,6 +78,14 @@ func NewJobManager(logger *zap.Logger, redisClient *redis.Client, db *gorm.DB) *
 		reminderQueryService: NewReminderQueryService(db),
 		taskQueryService:     NewTaskQueryService(db),
 	}
+
+	err = jm.loadConfig()
+	if err != nil {
+		logger.Sugar().Fatalf("Failed to load configuration: %v", err)
+		return nil
+	}
+
+	return jm
 }
 
 // =============================================================================
@@ -92,7 +100,14 @@ func (jm *JobManager) loadConfig() error {
 	}
 
 	jm.config = &config
-	jm.logger.Infof("Loaded %d tasks from configuration", len(config.Tasks))
+	jm.logger.Infof("Loaded %d tasks from configuration", len(config.Jobs))
+
+	// register job handlers: checkTask, writeBlog, generateCalendar
+	RegisterJobHandler("checkTask", &TaskCheckHandler{jobManager: jm})
+	RegisterJobHandler("remindTask", &TaskRemindHandler{jobManager: jm})
+	RegisterJobHandler("writeBlog", &BlogWriteHandler{jobManager: jm})
+	RegisterJobHandler("generateCalendar", &CalendarGenerateHandler{jobManager: jm})
+
 	return nil
 }
 
@@ -100,8 +115,8 @@ func (jm *JobManager) loadConfig() error {
 // TASK EXECUTION FUNCTIONS
 // =============================================================================
 
-// executeFunction maps function names to actual Go functions and executes them
-func (jm *JobManager) executeFunction(functionName, param string) {
+// ExecuteFunction is a public method to execute job handlers by name
+func (jm *JobManager) ExecuteFunction(functionName, param string) error {
 	// Clean up function name
 	functionName = strings.TrimSuffix(functionName, "()")
 
@@ -111,12 +126,21 @@ func (jm *JobManager) executeFunction(functionName, param string) {
 	handler, exists := JobHandlers[functionName]
 	if !exists {
 		jm.logger.Warnf("No handler found for function: %s", functionName)
-		return
+		return fmt.Errorf("no handler found for function: %s", functionName)
 	}
 
 	if err := handler.Execute(param); err != nil {
 		jm.logger.Errorf("Error executing plugin %s: %v", functionName, err)
+		return fmt.Errorf("error executing plugin %s: %w", functionName, err)
 	}
+
+	return nil
+}
+
+// executeFunction maps function names to actual Go functions and executes them (private method)
+func (jm *JobManager) executeFunction(functionName, param string) {
+	// Use the public method but ignore the error (for backward compatibility)
+	jm.ExecuteFunction(functionName, param)
 }
 
 // =============================================================================
@@ -184,25 +208,25 @@ func (jm *JobManager) checkTaskExpiry() {
 // =============================================================================
 
 // checkReminders finds and processes due reminders
-func (jm *JobManager) checkReminders() {
+func (jm *JobManager) checkReminders() error {
 	if jm.reminderQueryService == nil {
 		jm.logger.Warn("Reminder query service not initialized, skipping reminder check")
-		return
+		return fmt.Errorf("reminder query service not initialized")
 	}
 
 	jm.logger.Debug("Checking for due reminders...")
 
 	// Query for due reminders using the query service
-	now := time.Now()
+	now := time.Now().UTC()
 	dueReminders, err := jm.reminderQueryService.FindDueReminders(now)
 	if err != nil {
 		jm.logger.Errorf("Failed to fetch due reminders: %v", err)
-		return
+		return fmt.Errorf("failed to fetch due reminders: %w", err)
 	}
 
 	if len(dueReminders) == 0 {
 		jm.logger.Debug("No due reminders found")
-		return
+		return nil
 	}
 
 	jm.logger.Infof("Found %d due reminders to process", len(dueReminders))
@@ -218,6 +242,7 @@ func (jm *JobManager) checkReminders() {
 	}
 
 	jm.logger.Infof("Successfully processed %d/%d reminders", successCount, len(dueReminders))
+	return nil
 }
 
 // processReminder handles a single reminder: sends email and updates status
@@ -233,7 +258,7 @@ func (jm *JobManager) processReminder(reminder *models.Reminder) error {
 	// Handle case where user has no email
 	if user.Email == "" {
 		jm.logger.Warnf("User %s has no email address, marking reminder %s as active without notification", user.ID, reminder.ID)
-		return jm.markReminderAsActive(reminder)
+		return fmt.Errorf("user %s has no email address, marking reminder %s as active without notification", user.ID, reminder.ID)
 	}
 
 	// Send email notification
@@ -241,15 +266,16 @@ func (jm *JobManager) processReminder(reminder *models.Reminder) error {
 		if err := jm.sendReminderEmail(reminder, user); err != nil {
 			jm.logger.Errorf("Failed to send reminder email for %s: %v", reminder.ID, err)
 			// Continue to mark as active even if email fails
+			return fmt.Errorf("failed to send reminder email for %s: %w", reminder.ID, err)
 		} else {
 			jm.logger.Infof("Successfully sent reminder email for %s to %s", reminder.ID, user.Email)
+			// Update reminder status
+			return jm.markReminderAsActive(reminder)
 		}
 	} else {
 		jm.logger.Warn("Email sender not available, skipping email notification")
+		return fmt.Errorf("email sender not available, skipping email notification")
 	}
-
-	// Update reminder status
-	return jm.markReminderAsActive(reminder)
 }
 
 // sendReminderEmail sends a formatted email notification for a reminder
@@ -289,7 +315,7 @@ Time: %s`,
 
 // markReminderAsActive updates a reminder's status to 'active'
 func (jm *JobManager) markReminderAsActive(reminder *models.Reminder) error {
-	err := jm.reminderQueryService.UpdateReminderStatus(reminder, "active")
+	err := jm.reminderQueryService.UpdateReminderStatus(reminder, "active", reminder.CreatedBy)
 	if err != nil {
 		return fmt.Errorf("failed to update reminder status: %w", err)
 	}
@@ -541,7 +567,11 @@ func (jm *JobManager) addSystemCronJobs(c *cron.Cron) {
 	}
 
 	// Reminder check (every minute)
-	_, err = c.AddFunc("@every 1m", jm.checkReminders)
+	_, err = c.AddFunc("@every 1m", func() {
+		if err := jm.checkReminders(); err != nil {
+			jm.logger.Errorf("Reminder check failed: %v", err)
+		}
+	})
 	if err != nil {
 		jm.logger.Fatalf("Failed to add reminder check cron job: %v", err)
 	} else {
@@ -564,7 +594,7 @@ func (jm *JobManager) addConfiguredTasks(c *cron.Cron) {
 		return
 	}
 
-	for _, task := range jm.config.Tasks {
+	for _, task := range jm.config.Jobs {
 		jm.addSingleTask(c, task)
 		jm.setTaskDeadline(task)
 	}
@@ -643,11 +673,6 @@ func (jm *JobManager) setTaskDeadline(theJob CronJob) {
 // CheckTasks is the main entry point that starts the job manager
 func (jm *JobManager) CheckTasks() {
 	jm.logger.Info("Starting Job Manager...")
-
-	// Load configuration
-	if err := jm.loadConfig(); err != nil {
-		jm.logger.Fatalf("Failed to load configuration: %v", err)
-	}
 
 	// Setup and start cron scheduler
 	jm.cronScheduler = jm.setupCronScheduler()

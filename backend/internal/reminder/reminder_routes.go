@@ -48,7 +48,7 @@ func RegisterRoutes(router *gin.Engine, service *ReminderService, middleware *au
 		}
 
 		realmID, _ := auth.GetCurrentRealm(c)
-		creator, _ := auth.GetCurrentUsername(c)
+		creator, _ := auth.GetCurrentUser(c)
 		created, err := service.CreateFromInput(req, realmID, creator)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

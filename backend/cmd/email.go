@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 )
 
 var (
@@ -39,14 +39,14 @@ func runEmailCommand() {
 	// Create email sender
 	sender, err := email.NewEmailSender()
 	if err != nil {
-		log.Fatalf("Failed to create email sender: %v", err)
+		log.GetLogger().Fatalf("Failed to create email sender: %v", err)
 	}
 
 	// Test connection if requested
 	if testConnection {
 		fmt.Println("Testing SMTP connection...")
 		if err := sender.TestConnection(); err != nil {
-			log.Fatalf("Connection test failed: %v", err)
+			log.GetLogger().Fatalf("Connection test failed: %v", err)
 		}
 		fmt.Println("✅ SMTP connection test successful!")
 
@@ -76,7 +76,7 @@ func runEmailCommand() {
 		}
 
 		if err != nil {
-			log.Fatalf("Failed to send email: %v", err)
+			log.GetLogger().Fatalf("Failed to send email: %v", err)
 		}
 
 		fmt.Println("✅ Email sent successfully!")

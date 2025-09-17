@@ -2,7 +2,8 @@ package email
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 )
 
 // ExampleUsage demonstrates how to use the EmailSender
@@ -10,15 +11,15 @@ func ExampleUsage() {
 	// Method 1: Create email sender from environment variables
 	sender, err := NewEmailSender()
 	if err != nil {
-		log.Fatalf("Failed to create email sender: %v", err)
+		log.GetLogger().Fatalf("Failed to create email sender: %v", err)
 	}
 
 	// Test connection first
 	if err := sender.TestConnection(); err != nil {
-		log.Printf("Email connection test failed: %v", err)
+		log.GetLogger().Errorf("Email connection test failed: %v", err)
 		return
 	}
-	log.Println("Email connection test successful!")
+	log.GetLogger().Info("Email connection test successful!")
 
 	// Example 1: Send simple email to default recipient
 	err = sender.SendSimpleEmail(
@@ -26,9 +27,9 @@ func ExampleUsage() {
 		"This is a test email body.",
 	)
 	if err != nil {
-		log.Printf("Failed to send simple email: %v", err)
+		log.GetLogger().Errorf("Failed to send simple email: %v", err)
 	} else {
-		log.Println("Simple email sent successfully!")
+		log.GetLogger().Info("Simple email sent successfully!")
 	}
 
 	// Example 2: Send email to specific recipients
@@ -39,9 +40,9 @@ func ExampleUsage() {
 		[]string{"manager@example.com"},                    // CC addresses
 	)
 	if err != nil {
-		log.Printf("Failed to send email to recipients: %v", err)
+		log.GetLogger().Errorf("Failed to send email to recipients: %v", err)
 	} else {
-		log.Println("Email sent to specific recipients successfully!")
+		log.GetLogger().Info("Email sent to specific recipients successfully!")
 	}
 
 	// Example 3: Send custom email message
@@ -55,9 +56,9 @@ func ExampleUsage() {
 
 	err = sender.SendEmail(message)
 	if err != nil {
-		log.Printf("Failed to send custom email: %v", err)
+		log.GetLogger().Errorf("Failed to send custom email: %v", err)
 	} else {
-		log.Println("Custom email sent successfully!")
+		log.GetLogger().Info("Custom email sent successfully!")
 	}
 
 	// Method 2: Create email sender with custom configuration
@@ -80,9 +81,9 @@ func ExampleUsage() {
 		"This email was sent using custom configuration.",
 	)
 	if err != nil {
-		log.Printf("Failed to send email with custom config: %v", err)
+		log.GetLogger().Errorf("Failed to send email with custom config: %v", err)
 	} else {
-		log.Println("Email with custom config sent successfully!")
+		log.GetLogger().Info("Email with custom config sent successfully!")
 	}
 }
 
@@ -193,4 +194,3 @@ This is an automated message from the system.`, title, message, "timestamp_place
 	// Send to default admin email (configured in MAIL_RECEIVER)
 	return sender.SendSimpleEmail(subject, body)
 }
-

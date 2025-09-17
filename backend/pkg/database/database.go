@@ -2,13 +2,12 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/spf13/viper"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/service"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -29,6 +28,7 @@ type DatabaseConfig struct {
 	SSLMode  string `mapstructure:"ssl_mode"`
 	Charset  string `mapstructure:"charset"`
 	FilePath string `mapstructure:"file_path"` // for SQLite
+	LogLevel string `mapstructure:"log_level"` // silent, error, warn, info
 }
 
 // InitDB initializes database connection based on configuration
@@ -41,17 +41,25 @@ func InitDB() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Auto-migrate database schema
-	if err := DB.AutoMigrate(models.GetAllModels()...); err != nil {
-		return fmt.Errorf("auto-migration failed: %w", err)
+	// Check if database initialization is needed
+	skipDbInit := os.Getenv("SKIP_DB_INIT")
+	if skipDbInit != "1" {
+		log.GetLogger().Info("Running database initialization (set SKIP_DB_INIT=1 to skip)")
+
+		// Auto-migrate database schema
+		if err := DB.AutoMigrate(models.GetAllModels()...); err != nil {
+			return fmt.Errorf("auto-migration failed: %w", err)
+		}
+
+		// Initialize data
+		if err := InitData(); err != nil {
+			return fmt.Errorf("failed to initialize data: %w", err)
+		}
+	} else {
+		log.GetLogger().Info("Skipping database initialization (SKIP_DB_INIT=0)")
 	}
 
-	// Initialize data
-	if err := InitData(); err != nil {
-		return fmt.Errorf("failed to initialize data: %w", err)
-	}
-
-	log.Printf("Successfully connected to %s database", config.Type)
+	log.GetLogger().Infof("Successfully connected to %s database", config.Type)
 	return nil
 }
 
@@ -67,6 +75,7 @@ func loadDatabaseConfig() *DatabaseConfig {
 		SSLMode:  getEnvOrDefault("DB_SSL_MODE", "disable"),
 		Charset:  getEnvOrDefault("DB_CHARSET", "utf8mb4"),
 		FilePath: getEnvOrDefault("DB_FILE_PATH", "lazy-rabbit-reminder.db"),
+		LogLevel: getEnvOrDefault("DB_LOG_LEVEL", "error"), // Default to error level to reduce noise
 	}
 
 	// Override with viper config if available
@@ -97,8 +106,27 @@ func loadDatabaseConfig() *DatabaseConfig {
 	if viper.IsSet("database.file_path") {
 		config.FilePath = viper.GetString("database.file_path")
 	}
+	if viper.IsSet("database.log_level") {
+		config.LogLevel = viper.GetString("database.log_level")
+	}
 
 	return config
+}
+
+// parseGormLogLevel converts string log level to GORM logger level
+func parseGormLogLevel(levelStr string) logger.LogLevel {
+	switch levelStr {
+	case "silent":
+		return logger.Silent
+	case "error":
+		return logger.Error
+	case "warn", "warning":
+		return logger.Warn
+	case "info", "debug": // Both info and debug map to Info level (most verbose)
+		return logger.Info
+	default:
+		return logger.Error // Default to error level to reduce noise
+	}
 }
 
 // connectDatabase establishes database connection based on type
@@ -122,9 +150,9 @@ func connectSQLite(config *DatabaseConfig) (*gorm.DB, error) {
 		dsn = "lazy-rabbit-reminder.db"
 	}
 
-	log.Printf("Connecting to SQLite database: %s", dsn)
+	log.GetLogger().Infof("Connecting to SQLite database: %s", dsn)
 	return gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(parseGormLogLevel(config.LogLevel)),
 	})
 }
 
@@ -137,9 +165,9 @@ func connectPostgreSQL(config *DatabaseConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		config.Host, config.Port, config.Username, config.Password, config.Database, config.SSLMode)
 
-	log.Printf("Connecting to PostgreSQL database: %s:%d/%s", config.Host, config.Port, config.Database)
+	log.GetLogger().Infof("Connecting to PostgreSQL database: %s:%d/%s", config.Host, config.Port, config.Database)
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(parseGormLogLevel(config.LogLevel)),
 	})
 }
 
@@ -152,9 +180,9 @@ func connectMySQL(config *DatabaseConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		config.Username, config.Password, config.Host, config.Port, config.Database, config.Charset)
 
-	log.Printf("Connecting to MySQL database: %s:%d/%s", config.Host, config.Port, config.Database)
+	log.GetLogger().Infof("Connecting to MySQL database: %s:%d/%s", config.Host, config.Port, config.Database)
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(parseGormLogLevel(config.LogLevel)),
 	})
 }
 
@@ -176,12 +204,12 @@ func InitData() error {
 			if result.Error != nil {
 				return fmt.Errorf("failed to insert initial prompt data: %w", result.Error)
 			}
-			log.Printf("Initialized database with %d prompts", len(prompts))
+			log.GetLogger().Infof("Initialized database with %d prompts", len(prompts))
 		}
 	}
 
-	// Call the comprehensive data initialization from service package
-	return service.InitCompleteData(DB)
+	// Call the comprehensive data initialization from models package
+	return models.InitCompleteData(DB)
 }
 
 // Helper functions

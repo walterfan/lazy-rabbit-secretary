@@ -10,6 +10,70 @@ This package provides unified database support for SQLite, PostgreSQL, and MySQL
 
 ## Configuration
 
+### Database Initialization Control
+
+For faster startup times, you can skip database initialization (AutoMigrate and InitData) by setting the `SKIP_DB_INIT` environment variable to `1`.
+
+### Performance Impact
+
+- **With initialization** (default): Full schema migration and data initialization (~11 seconds)
+- **Without initialization** (`SKIP_DB_INIT=1`): Skip migration and data init (~1.8 seconds, **6x faster**)
+
+### Usage
+
+```bash
+# Fast startup (skip initialization)
+SKIP_DB_INIT=1 ./lazy-rabbit-reminder job --list
+
+# Normal startup (with initialization) - default behavior
+./lazy-rabbit-reminder job --list
+```
+
+### When to Use
+
+- **Skip initialization (`SKIP_DB_INIT=1`)**:
+  - Production environments where database is already initialized
+  - Development when database schema is stable
+  - CI/CD pipelines where speed is important
+  - Testing scenarios
+
+- **Enable initialization (default)**:
+  - First-time setup
+  - After schema changes
+  - When database needs to be reset
+  - Development with frequent schema changes
+
+## Database Logging
+
+The database package includes configurable SQL query logging using GORM's built-in logger. This is separate from the application's unified logger and specifically controls SQL query visibility.
+
+#### Log Levels
+
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| `silent` | No SQL logging | Production (minimal overhead) |
+| `error` | Only log SQL errors | Production (recommended default) |
+| `warn` | Log SQL errors and slow queries | Production monitoring |
+| `info` | Log all SQL queries with timing | Development and debugging |
+| `debug` | Same as info (most verbose) | Development and debugging |
+
+#### Configuration Methods
+
+**Config File (config.yaml):**
+```yaml
+database:
+  log_level: "error"  # silent, error, warn, info, debug
+```
+
+**Environment Variable:**
+```bash
+DB_LOG_LEVEL=info ./lazy-rabbit-reminder
+```
+
+**Default Behavior:**
+- Default level: `error` (reduces noise while showing important issues)
+- Environment variables override config file settings
+
 ### Environment Variables
 
 You can configure the database using environment variables:
@@ -33,6 +97,12 @@ export DB_CHARSET=utf8mb4
 
 # SQLite specific
 export DB_FILE_PATH=lazy-rabbit-reminder.db
+
+# Database logging
+export DB_LOG_LEVEL=error  # silent, error, warn, info, debug
+
+# Database initialization control
+export SKIP_DB_INIT=1  # Set to 0 to skip AutoMigrate and InitData for faster startup
 
 # Default user credentials
 export ADMIN_USERNAME=admin

@@ -15,7 +15,7 @@ import (
 
 	"github.com/walterfan/lazy-rabbit-reminder/internal/api"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/service"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/jobs"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
 )
@@ -55,7 +55,7 @@ var serverCmd = &cobra.Command{
 
 		logger.Info("Starting Job Manager...")
 		db := database.GetDB()
-		tm := service.NewJobManager(logger, rdb, db)
+		tm := jobs.NewJobManager(logger, rdb, db)
 		go tm.CheckTasks()
 
 		signalChan := make(chan os.Signal, 1)

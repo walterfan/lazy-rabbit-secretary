@@ -4,6 +4,14 @@ server:
   tls:
     cert_file: "certs/certificate.pem"
     key_file: "certs/private.pem"
+log:
+  file: "lazy-rabbit-reminder.log"
+  level: "info"  # debug, info, warn, error, fatal, panic
+  format: "json"  # json or console
+  enable_file: true  # whether to write logs to file
+  max_size: 100  # maximum log file size in MB
+database:
+  log_level: "info"  # silent, error, warn, info, debug (controls SQL query logging)
 static_routes:
   public:
     - path: "/web"
@@ -20,8 +28,21 @@ commands:
     desc: "ask a question"
   - name: "write_blog"
     desc: "write a blog"
-tasks:
+jobs:
   - name: "check task"
-    schedule: "0 0 * * * *"  # Every 1 minute
+    schedule: "0 0 * * * *"  # Every hour (6-field format: sec min hour day month dow)
     function: "checkTask"
+    deadline: "2025-12-31T23:59:59Z"
+  - name: "check reminder"
+    schedule: "0 30 * * * *"  # Every hour (6-field format: sec min hour day month dow)
+    function: "checkReminder"
+    deadline: "2025-12-31T23:59:59Z"
+  - name: "write blog"
+    schedule: "0 0 21 * * *"  # 21:00 every day (6-field format: sec min hour day month dow)
+    function: "writeBlog"
+    deadline: "2025-12-31T23:59:59Z"
+  - name: "generate calendar"
+    schedule: "0 0 9 * * *"  # 9:00 every day (6-field format: sec min hour day month dow)
+    function: "generateCalendar"
+    deadline: "2025-12-31T23:59:59Z"
 

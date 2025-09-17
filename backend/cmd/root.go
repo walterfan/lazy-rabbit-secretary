@@ -3,9 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
 	"go.uber.org/zap"
 )
 
@@ -18,12 +20,12 @@ var rootCmd = &cobra.Command{
 var logger *zap.Logger
 
 func initLogger() {
-	var err error
-	logger, err = zap.NewProduction()
+	err := log.InitLogger()
 	if err != nil {
-		panic(fmt.Sprintf("failed to initialize logger: %v", err))
+		panic(fmt.Sprintf("failed to initialize unified logger: %v", err))
 	}
-	defer logger.Sync()
+	// Keep the old logger for backward compatibility
+	logger = log.GetLogger().Desugar()
 }
 
 func initConfig() {
