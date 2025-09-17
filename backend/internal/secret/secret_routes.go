@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
 )
 
 // RegisterRoutes registers HTTP endpoints for managing secrets
@@ -70,17 +69,18 @@ func RegisterRoutes(router *gin.Engine, service *SecretService, middleware *auth
 
 	group.PUT("/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		var s models.Secret
-		if err := c.ShouldBindJSON(&s); err != nil {
+		var req UpdateSecretRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		s.ID = id
-		if err := service.UpdateSecret(&s); err != nil {
+		updater, _ := auth.GetCurrentUsername(c)
+		updated, err := service.UpdateFromInput(id, req, updater)
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, s)
+		c.JSON(http.StatusOK, updated)
 	})
 
 	group.DELETE("/:id", func(c *gin.Context) {
@@ -95,6 +95,23 @@ func RegisterRoutes(router *gin.Engine, service *SecretService, middleware *auth
 	group.POST("/:id/decrypt", func(c *gin.Context) {
 		id := c.Param("id")
 		value, err := service.DecryptSecret(id)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"value": value})
+	})
+
+	group.POST("/:id/decrypt-with-kek", func(c *gin.Context) {
+		id := c.Param("id")
+		var req struct {
+			KEK string `json:"kek" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		value, err := service.DecryptSecretWithKEK(id, req.KEK)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

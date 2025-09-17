@@ -65,6 +65,11 @@ class HttpInterceptor {
       headers['Authorization'] = `Bearer ${authStore.token}`;
     }
 
+    //log the request url and method
+    console.log(`Request: ${config.method} ${config.url}`);
+    //console.log(`Headers: ${JSON.stringify(headers)}`);
+    //console.log(`Body: ${config.body}`);
+
     const response = await fetch(config.url, {
       method: config.method || 'GET',
       headers,

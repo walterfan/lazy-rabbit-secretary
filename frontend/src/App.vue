@@ -22,6 +22,11 @@
               <i class="bi bi-list-task"></i> Tasks
             </router-link>
           </li>
+          <li class="nav-item" v-if="isAuthenticated">
+            <router-link class="nav-link" to="/reminders">
+              <i class="bi bi-bell"></i> Reminders
+            </router-link>
+          </li>
           <li class="nav-item dropdown" v-if="isAuthenticated">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-tools"></i> Tools

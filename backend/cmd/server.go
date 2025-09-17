@@ -54,7 +54,8 @@ var serverCmd = &cobra.Command{
 		go webService.Run()
 
 		logger.Info("Starting Job Manager...")
-		tm := service.NewJobManager(logger, rdb)
+		db := database.GetDB()
+		tm := service.NewJobManager(logger, rdb, db)
 		go tm.CheckTasks()
 
 		signalChan := make(chan os.Signal, 1)

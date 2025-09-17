@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import BooksView from '@/views/BooksView.vue';
 import TasksView from '@/views/TasksView.vue';
+import RemindersView from '@/views/RemindersView.vue';
 import SecretsView from '@/views/SecretsView.vue';
 import HomeView from '@/views/HomeView.vue';
 import SignInView from '@/views/SignInView.vue';
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/tasks',
       name: 'tasks',
       component: TasksView
+    },
+    {
+      path: '/reminders',
+      name: 'reminders',
+      component: RemindersView
     },
     {
       path: '/secrets',

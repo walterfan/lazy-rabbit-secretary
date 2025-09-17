@@ -24,6 +24,7 @@ func init() {
 func TestFeatures(t *testing.T) {
 	o := opts
 	o.TestingT = t
+	o.Paths = []string{"features"}
 
 	status := godog.TestSuite{
 		Name:                "lazy-rabbit-reminder BDD tests",
@@ -44,6 +45,9 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	// Initialize user registration context
 	userRegCtx := steps.NewUserRegistrationContext()
 	userRegCtx.InitializeScenario(sc)
+
+	// Initialize task reminding steps
+	steps.InitializeTaskRemindingSteps(sc)
 
 	// Global before scenario hook
 	sc.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {

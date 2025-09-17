@@ -1,11 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +19,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
+	"github.com/walterfan/lazy-rabbit-reminder/internal/reminder"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/secret"
 	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
 	"github.com/walterfan/lazy-rabbit-reminder/pkg/metrics"
@@ -24,6 +28,22 @@ import (
 type StaticRoute struct {
 	Path string
 	Dir  string
+}
+
+// responseWriter wraps gin.ResponseWriter to capture response body
+type responseWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w *responseWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *responseWriter) WriteString(s string) (int, error) {
+	w.body.WriteString(s)
+	return w.ResponseWriter.WriteString(s)
 }
 
 type CommandResponse struct {
@@ -67,6 +87,9 @@ func (thiz *WebApiService) Run() {
 
 	// Structured request logging middleware (with skips)
 	r.Use(thiz.requestLoggerWithSkips(skipPrefixes))
+
+	// API-specific detailed logging for /api/v1/* routes
+	r.Use(thiz.apiLoggerMiddleware())
 
 	// Health and metrics
 	r.GET("/ping", func(ctx *gin.Context) {
@@ -156,9 +179,14 @@ func (thiz *WebApiService) Run() {
 	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
 	secret.RegisterRoutes(r, secretService, authMiddleware)
 
-	// Register task routes
+	// Register reminder routes first (needed by task service)
+	reminderRepo := reminder.NewReminderRepository()
+	reminderService := reminder.NewReminderService(reminderRepo)
+	reminder.RegisterRoutes(r, reminderService, authMiddleware)
+
+	// Register task routes (with reminder service dependency)
 	taskRepo := task.NewTaskRepository()
-	taskService := task.NewTaskService(taskRepo)
+	taskService := task.NewTaskService(taskRepo, reminderService)
 	task.RegisterRoutes(r, taskService, authMiddleware)
 
 	// Default route for SPA
@@ -222,6 +250,105 @@ func wrapMiddlewareWithSkips(mw gin.HandlerFunc, skipPrefixes []string) gin.Hand
 		}
 		mw(c)
 	}
+}
+
+// apiLoggerMiddleware provides detailed logging for /api/v1/* routes including request/response bodies
+func (thiz *WebApiService) apiLoggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Only log /api/v1/* routes
+		if !strings.HasPrefix(path, "/api/v1/") {
+			c.Next()
+			return
+		}
+
+		start := time.Now()
+
+		// Capture request body
+		var requestBody []byte
+		if c.Request.Body != nil {
+			requestBody, _ = io.ReadAll(c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+		}
+
+		// Create custom response writer to capture response
+		w := &responseWriter{
+			ResponseWriter: c.Writer,
+			body:           &bytes.Buffer{},
+		}
+		c.Writer = w
+
+		// Process request
+		c.Next()
+
+		// Calculate latency
+		latency := time.Since(start)
+		status := c.Writer.Status()
+
+		// Prepare log fields
+		logFields := []zap.Field{
+			zap.String("method", c.Request.Method),
+			zap.String("path", path),
+			zap.String("query", c.Request.URL.RawQuery),
+			zap.Int("status", status),
+			zap.Duration("latency", latency),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("user_agent", c.Request.UserAgent()),
+		}
+
+		// Add request body if present and not too large
+		if len(requestBody) > 0 && len(requestBody) < 10240 { // 10KB limit
+			// Mask sensitive fields in request body
+			requestBodyStr := thiz.maskSensitiveData(string(requestBody))
+			logFields = append(logFields, zap.String("request_body", requestBodyStr))
+		}
+
+		// Add response body if not too large
+		responseBody := w.body.String()
+		if len(responseBody) > 0 && len(responseBody) < 10240 { // 10KB limit
+			// Mask sensitive fields in response body
+			responseBodyStr := thiz.maskSensitiveData(responseBody)
+			logFields = append(logFields, zap.String("response_body", responseBodyStr))
+		}
+
+		// Add content type headers
+		if contentType := c.Request.Header.Get("Content-Type"); contentType != "" {
+			logFields = append(logFields, zap.String("request_content_type", contentType))
+		}
+		if responseContentType := c.Writer.Header().Get("Content-Type"); responseContentType != "" {
+			logFields = append(logFields, zap.String("response_content_type", responseContentType))
+		}
+
+		// Log based on status code
+		if status >= 400 {
+			thiz.logger.Error("API request completed with error", logFields...)
+		} else {
+			thiz.logger.Info("API request completed", logFields...)
+		}
+	}
+}
+
+// maskSensitiveData replaces sensitive information in JSON strings
+func (thiz *WebApiService) maskSensitiveData(data string) string {
+	// List of sensitive field names to mask
+	sensitiveFields := []string{"password", "kek", "value", "secret", "token", "key", "auth"}
+
+	result := data
+	for _, field := range sensitiveFields {
+		// Create regex pattern to match JSON field patterns like "field":"value" or "field": "value"
+		pattern := fmt.Sprintf(`"%s"\s*:\s*"[^"]*"`, field)
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			continue
+		}
+
+		// Replace the matched pattern with masked version
+		replacement := fmt.Sprintf(`"%s":"***MASKED***"`, field)
+		result = re.ReplaceAllString(result, replacement)
+	}
+
+	return result
 }
 
 func (thiz *WebApiService) startServer(r *gin.Engine) {

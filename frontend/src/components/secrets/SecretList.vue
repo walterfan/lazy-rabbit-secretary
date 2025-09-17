@@ -71,6 +71,12 @@
               <div class="secret-name">
                 <i class="bi bi-key-fill text-primary"></i>
                 <span class="fw-medium">{{ secret.name }}</span>
+                <span v-if="secret.kek_version === 999" class="badge bg-warning ms-2" title="This secret requires a custom KEK for decryption">
+                  <i class="bi bi-shield-exclamation"></i> Custom KEK
+                </span>
+                <span v-else class="badge bg-info ms-2" title="This secret uses system default KEK">
+                  <i class="bi bi-shield-check"></i> v{{ secret.kek_version }}
+                </span>
               </div>
             </td>
             <td class="col-group">
@@ -106,6 +112,13 @@
                   title="Copy secret value"
                 >
                   <i class="bi bi-clipboard"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-info"
+                  @click="$emit('copy-with-kek', secret)"
+                  title="Copy with custom KEK"
+                >
+                  <i class="bi bi-key"></i>
                 </button>
                 <button
                   class="btn btn-sm btn-outline-secondary"
@@ -212,6 +225,7 @@ const emit = defineEmits<{
   (e: 'edit', secret: Secret): void;
   (e: 'delete', id: string): void;
   (e: 'copy', secret: Secret): void;
+  (e: 'copy-with-kek', secret: Secret): void;
   (e: 'update:searchQuery', value: string): void;
   (e: 'update:filters', filters: any): void;
   (e: 'update:page', page: number): void;

@@ -12,6 +12,7 @@
    service
 
    blog_generation
+   task_reminding
 
    trap
    tool

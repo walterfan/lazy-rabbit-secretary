@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Secret, CreateSecretRequest } from '@/types';
+import type { Secret, CreateSecretRequest, UpdateSecretRequest } from '@/types';
 import { handleHttpError, showErrorAlert, logError } from '@/utils/errorHandler';
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 
@@ -110,7 +110,7 @@ export const useSecretStore = defineStore('secret', () => {
   };
 
   // Update an existing secret
-  const updateSecret = async (id: string, updates: Partial<Secret>): Promise<Secret> => {
+  const updateSecret = async (id: string, updates: UpdateSecretRequest): Promise<Secret> => {
     loading.value = true;
     error.value = null;
     
@@ -122,7 +122,7 @@ export const useSecretStore = defineStore('secret', () => {
         },
         body: JSON.stringify(updates)
       });
-      
+
       if (!response.ok) {
         const apiError = await handleHttpError(response);
         logError(apiError, 'updateSecret');
@@ -200,6 +200,37 @@ export const useSecretStore = defineStore('secret', () => {
     }
   };
 
+  // Decrypt and copy secret value with custom KEK
+  const copySecretValueWithKEK = async (secret: Secret, kek: string): Promise<void> => {
+    try {
+      const response = await makeAuthenticatedRequest(`/api/v1/secrets/${secret.id}/decrypt-with-kek`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ kek })
+      });
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'copySecretValueWithKEK');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      const { value } = await response.json();
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(value);
+      
+      // Show success message
+      alert('Secret value copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy secret with KEK:', err);
+      alert('Failed to copy secret value. Please check your KEK.');
+    }
+  };
+
   // Clear store
   const clearSecrets = () => {
     secrets.value = [];
@@ -218,6 +249,7 @@ export const useSecretStore = defineStore('secret', () => {
     updateSecret,
     deleteSecret,
     copySecretValue,
+    copySecretValueWithKEK,
     clearSecrets
   };
 });

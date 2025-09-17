@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -32,6 +33,18 @@ type CreateSecretRequest struct {
 	Desc  string `json:"desc"`
 	Path  string `json:"path" binding:"required"`
 	Value string `json:"value" binding:"required"`
+	KEK   string `json:"kek"` // Optional custom KEK (32 characters)
+}
+
+// UpdateSecretRequest defines the allowed input for updating a secret
+type UpdateSecretRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Group        string `json:"group" binding:"required"`
+	Desc         string `json:"desc"`
+	Path         string `json:"path" binding:"required"`
+	Value        string `json:"value" binding:"required"`         // New secret value
+	CurrentValue string `json:"current_value" binding:"required"` // Current secret value for verification
+	KEK          string `json:"kek"`                              // Optional custom KEK (32 characters)
 }
 
 func (s *SecretService) CreateFromInput(req CreateSecretRequest, realmID, createdBy string) (*models.Secret, error) {
@@ -39,9 +52,22 @@ func (s *SecretService) CreateFromInput(req CreateSecretRequest, realmID, create
 		return nil, errors.New("realm_id, name, group, path are required")
 	}
 
-	kek, kekVersion, err := loadKEKFromEnv()
-	if err != nil {
-		return nil, err
+	// Validate custom KEK if provided
+	var kek []byte
+	var kekVersion int
+	var err error
+
+	if strings.TrimSpace(req.KEK) != "" {
+		// Use custom KEK - hash it to 32 bytes using SHA-256
+		hash := sha256.Sum256([]byte(req.KEK))
+		kek = hash[:]
+		kekVersion = 999 // Use a special version for custom KEKs
+	} else {
+		// Use environment KEK
+		kek, kekVersion, err = loadKEKFromEnv()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Envelope encryption: encrypt value with random DEK, then wrap DEK with KEK
@@ -82,6 +108,80 @@ func (s *SecretService) CreateFromInput(req CreateSecretRequest, realmID, create
 		return nil, err
 	}
 	return secret, nil
+}
+
+// UpdateFromInput updates an existing secret with new data and re-encryption
+func (s *SecretService) UpdateFromInput(id string, req UpdateSecretRequest, updatedBy string) (*models.Secret, error) {
+	if strings.TrimSpace(id) == "" || strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Path) == "" || strings.TrimSpace(req.Group) == "" {
+		return nil, errors.New("id, name, group, path are required")
+	}
+
+	// Get existing secret to preserve realm_id and other metadata
+	existing, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get existing secret: %w", err)
+	}
+
+	// SECURITY: Verify the current value before allowing update
+	currentDecrypted, err := s.DecryptSecret(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt existing secret for verification: %w", err)
+	}
+
+	if currentDecrypted != req.CurrentValue {
+		return nil, errors.New("current value verification failed - provided current value does not match stored secret")
+	}
+
+	// Validate custom KEK if provided for the NEW secret
+	var kek []byte
+	var kekVersion int
+
+	if strings.TrimSpace(req.KEK) != "" {
+		// Use custom KEK - hash it to 32 bytes using SHA-256
+		hash := sha256.Sum256([]byte(req.KEK))
+		kek = hash[:]
+		kekVersion = 999 // Use a special version for custom KEKs
+	} else {
+		// Use environment KEK
+		kek, kekVersion, err = loadKEKFromEnv()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Envelope encryption: encrypt NEW value with random DEK, then wrap DEK with KEK
+	dek := generateRandomBytes(32)
+	ciphertext, dataNonce, dataTag, err := encryptAESGCM(dek, []byte(req.Value))
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt new secret: %w", err)
+	}
+
+	wrappedDEK, wrapNonce, wrapTag, err := encryptAESGCM(kek, dek)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap DEK: %w", err)
+	}
+
+	// Combine wrap parts into a single field (since model has only WrappedDEK)
+	combinedWrapped := append(append(wrapNonce, wrappedDEK...), wrapTag...)
+
+	// Update the secret with new data
+	existing.Name = req.Name
+	existing.Group = req.Group
+	existing.Desc = req.Desc
+	existing.Path = req.Path
+	existing.CipherAlg = "aes-256-gcm"
+	existing.CipherText = base64.StdEncoding.EncodeToString(ciphertext)
+	existing.Nonce = base64.StdEncoding.EncodeToString(dataNonce)
+	existing.AuthTag = base64.StdEncoding.EncodeToString(dataTag)
+	existing.WrappedDEK = base64.StdEncoding.EncodeToString(combinedWrapped)
+	existing.KEKVersion = kekVersion
+	existing.UpdatedBy = updatedBy
+	existing.UpdatedAt = time.Now()
+
+	if err := s.repo.Update(existing); err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 // Legacy simple create retained for compatibility
@@ -180,11 +280,73 @@ func (s *SecretService) DecryptSecret(id string) (string, error) {
 	return string(plaintext), nil
 }
 
+// DecryptSecretWithKEK decrypts a secret using a custom KEK provided by the user
+func (s *SecretService) DecryptSecretWithKEK(id, customKEK string) (string, error) {
+	secret, err := s.repo.GetByID(id)
+	if err != nil {
+		return "", fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	// Hash the custom KEK to 32 bytes using SHA-256
+	hash := sha256.Sum256([]byte(customKEK))
+	kek := hash[:]
+
+	// Decode base64 fields
+	ciphertext, err := base64.StdEncoding.DecodeString(secret.CipherText)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode ciphertext: %w", err)
+	}
+
+	nonce, err := base64.StdEncoding.DecodeString(secret.Nonce)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode nonce: %w", err)
+	}
+
+	authTag, err := base64.StdEncoding.DecodeString(secret.AuthTag)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode auth tag: %w", err)
+	}
+
+	wrappedDEK, err := base64.StdEncoding.DecodeString(secret.WrappedDEK)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode wrapped DEK: %w", err)
+	}
+
+	// Extract wrap nonce, wrapped DEK, and wrap tag from combined field
+	// Format: [wrapNonce][wrappedDEK][wrapTag]
+	wrapNonceSize := 12  // AES-GCM nonce size
+	wrappedDEKSize := 32 // AES-256 key size
+	wrapTagSize := 16    // AES-GCM tag size
+
+	if len(wrappedDEK) < wrapNonceSize+wrappedDEKSize+wrapTagSize {
+		return "", errors.New("invalid wrapped DEK format")
+	}
+
+	wrapNonce := wrappedDEK[:wrapNonceSize]
+	wrappedDEKOnly := wrappedDEK[wrapNonceSize : wrapNonceSize+wrappedDEKSize]
+	wrapTag := wrappedDEK[wrapNonceSize+wrappedDEKSize:]
+
+	// Unwrap DEK using custom KEK
+	dek, err := decryptAESGCM(kek, wrapNonce, wrappedDEKOnly, wrapTag)
+	if err != nil {
+		return "", fmt.Errorf("failed to unwrap DEK with custom KEK: %w", err)
+	}
+
+	// Decrypt the actual secret value using DEK
+	plaintext, err := decryptAESGCM(dek, nonce, ciphertext, authTag)
+	if err != nil {
+		return "", fmt.Errorf("failed to decrypt secret: %w", err)
+	}
+
+	return string(plaintext), nil
+}
+
 // --- helpers ---
 
 func loadKEKFromEnv() ([]byte, int, error) {
+	kekVersion := parseKEKVersion()
 	// Prefer base64-encoded KEK
-	if b64 := os.Getenv("KEK_BASE64"); b64 != "" {
+	if b64 := os.Getenv("KEK_BASE64_" + strconv.Itoa(kekVersion)); b64 != "" {
 		key, err := base64.StdEncoding.DecodeString(b64)
 		if err != nil {
 			return nil, 0, fmt.Errorf("invalid KEK_BASE64: %w", err)
@@ -192,15 +354,15 @@ func loadKEKFromEnv() ([]byte, int, error) {
 		if len(key) != 32 {
 			return nil, 0, fmt.Errorf("KEK must be 32 bytes for AES-256-GCM, got %d", len(key))
 		}
-		return key, parseKEKVersion(), nil
+		return key, kekVersion, nil
 	}
 	// Fallback: raw key in KEK (must be 32 bytes)
-	if raw := os.Getenv("KEK"); raw != "" {
+	if raw := os.Getenv("KEK_" + strconv.Itoa(kekVersion)); raw != "" {
 		key := []byte(raw)
 		if len(key) != 32 {
 			return nil, 0, fmt.Errorf("KEK must be 32 bytes for AES-256-GCM, got %d", len(key))
 		}
-		return key, parseKEKVersion(), nil
+		return key, kekVersion, nil
 	}
 	return nil, 0, errors.New("KEK not configured; set KEK_BASE64 or KEK")
 }

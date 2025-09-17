@@ -53,6 +53,7 @@
           @edit="handleEdit"
           @delete="handleDelete"
           @copy="handleCopy"
+          @copy-with-kek="openKEKModal"
           @update:searchQuery="searchQuery = $event"
           @update:filters="filters = $event"
           @update:page="currentPage = $event"
@@ -155,13 +156,106 @@
       </div>
     </div>
     <div v-if="viewingSecret" class="modal-backdrop fade show"></div>
+
+    <!-- KEK Input Modal -->
+    <div 
+      v-if="showKEKModal"
+      class="modal fade show d-block"
+      tabindex="-1"
+      @click.self="closeKEKModal"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-key me-2"></i>
+              Decrypt Secret
+              <span v-if="isKEKRequired" class="badge bg-warning ms-2">KEK Required</span>
+              <span v-else class="badge bg-info ms-2">KEK Optional</span>
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close" 
+              @click="closeKEKModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <!-- Required KEK Alert for version 999 -->
+            <div v-if="isKEKRequired" class="alert alert-warning" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>Custom KEK Required:</strong> 
+              This secret was encrypted with a custom KEK password. You must provide the exact password used during encryption to decrypt it.
+            </div>
+            
+            <!-- Optional KEK Alert for other versions -->
+            <div v-else class="alert alert-info" role="alert">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Optional Custom KEK:</strong> 
+              This secret was encrypted with the system default KEK. Only enter a custom KEK if you specifically used one during encryption.
+            </div>
+
+            <div class="mb-3">
+              <label for="kek-input" class="form-label">
+                <i class="bi bi-shield-lock me-1"></i>
+                Custom KEK Password/Phrase
+                <span v-if="isKEKRequired" class="text-danger">*</span>
+                <span v-else class="text-muted">(Optional)</span>
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="kek-input"
+                v-model="kekInput"
+                :placeholder="isKEKRequired ? 'Enter the custom KEK password used for encryption' : 'Leave empty to use system default KEK'"
+                maxlength="256"
+                :class="{ 'is-invalid': kekError }"
+                :required="isKEKRequired"
+              />
+              <div class="invalid-feedback" v-if="kekError">
+                {{ kekError }}
+              </div>
+              <small class="text-muted">
+                <span v-if="isKEKRequired">
+                  <i class="bi bi-info-circle me-1"></i>
+                  KEK Version: {{ selectedSecretForKEK?.kek_version }} (Custom KEK)
+                </span>
+                <span v-else>
+                  <i class="bi bi-info-circle me-1"></i>
+                  KEK Version: {{ selectedSecretForKEK?.kek_version }} (System Default). Only enter a custom KEK if this secret was specifically encrypted with one.
+                </span>
+              </small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              @click="closeKEKModal"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-primary" 
+              @click="handleKEKDecrypt"
+              :disabled="kekLoading"
+            >
+              <span v-if="kekLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <i v-else class="bi bi-unlock me-2"></i>
+              {{ kekLoading ? 'Decrypting...' : 'Decrypt & Copy' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="showKEKModal" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useSecretStore } from '@/stores/secretStore';
-import type { Secret, CreateSecretRequest } from '@/types';
+import type { Secret, CreateSecretRequest, UpdateSecretRequest } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import SecretForm from '@/components/secrets/SecretForm.vue';
 import SecretList from '@/components/secrets/SecretList.vue';
@@ -173,6 +267,13 @@ const showForm = ref(false);
 const editingSecret = ref<Secret | null>(null);
 const viewingSecret = ref<Secret | null>(null);
 
+// KEK Modal State
+const showKEKModal = ref(false);
+const kekInput = ref('');
+const kekError = ref('');
+const kekLoading = ref(false);
+const selectedSecretForKEK = ref<Secret | null>(null);
+
 // Search and Filter State
 const searchQuery = ref('');
 const filters = ref({
@@ -181,6 +282,11 @@ const filters = ref({
 });
 const currentPage = ref(1);
 const pageSize = ref(20);
+
+// Computed properties
+const isKEKRequired = computed(() => {
+  return selectedSecretForKEK.value?.kek_version === 999;
+});
 
 // Debounced search
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -194,6 +300,11 @@ watch([searchQuery, filters], () => {
 
 watch(currentPage, () => {
   loadSecrets();
+});
+
+// KEK Validation - KEK is optional, can be empty
+const isValidKEK = computed(() => {
+  return true; // Always valid since KEK is optional
 });
 
 // Load secrets
@@ -222,14 +333,21 @@ const closeForm = () => {
   editingSecret.value = null;
 };
 
-const handleFormSubmit = async (secretData: CreateSecretRequest) => {
+const handleFormSubmit = async (secretData: CreateSecretRequest | UpdateSecretRequest) => {
+  console.log('handleFormSubmit called with:', secretData);
+  console.log('editingSecret:', editingSecret.value);
+  
   try {
     if (editingSecret.value) {
-      // For editing, we need to handle it differently
-      // as the API might require different data
-      await secretStore.updateSecret(editingSecret.value.id, secretData as any);
+      console.log('Updating secret with ID:', editingSecret.value.id);
+      // For editing, use UpdateSecretRequest
+      await secretStore.updateSecret(editingSecret.value.id, secretData as UpdateSecretRequest);
+      console.log('Secret updated successfully');
     } else {
-      await secretStore.createSecret(secretData);
+      console.log('Creating new secret');
+      // For creating, use CreateSecretRequest
+      await secretStore.createSecret(secretData as CreateSecretRequest);
+      console.log('Secret created successfully');
     }
     closeForm();
     await loadSecrets();
@@ -260,6 +378,14 @@ const handleDelete = async (id: string) => {
 };
 
 const handleCopy = async (secret: Secret) => {
+  // If kek_version is 999, it means the secret was encrypted with a custom KEK
+  // and we must prompt the user for the custom KEK
+  if (secret.kek_version === 999) {
+    openKEKModal(secret);
+    return;
+  }
+  
+  // For other versions, try to decrypt with system default KEK
   try {
     await secretStore.copySecretValue(secret);
     if (viewingSecret.value) {
@@ -267,6 +393,57 @@ const handleCopy = async (secret: Secret) => {
     }
   } catch (error) {
     console.error('Failed to copy secret:', error);
+    // If default KEK fails, offer the KEK modal as fallback
+    openKEKModal(secret);
+  }
+};
+
+// KEK Modal handlers
+const openKEKModal = (secret: Secret) => {
+  selectedSecretForKEK.value = secret;
+  kekInput.value = '';
+  kekError.value = '';
+  showKEKModal.value = true;
+};
+
+const closeKEKModal = () => {
+  showKEKModal.value = false;
+  selectedSecretForKEK.value = null;
+  kekInput.value = '';
+  kekError.value = '';
+};
+
+const handleKEKDecrypt = async () => {
+  if (!selectedSecretForKEK.value) return;
+  
+  // Validate KEK input for version 999 (custom KEK required)
+  if (isKEKRequired.value && kekInput.value.trim().length === 0) {
+    kekError.value = 'Custom KEK is required for this secret (KEK version 999)';
+    return;
+  }
+  
+  kekLoading.value = true;
+  kekError.value = '';
+  
+  try {
+    if (kekInput.value.trim().length > 0) {
+      // User provided a custom KEK
+      await secretStore.copySecretValueWithKEK(selectedSecretForKEK.value, kekInput.value);
+    } else {
+      // No custom KEK provided, use default system KEK (only allowed for non-999 versions)
+      await secretStore.copySecretValue(selectedSecretForKEK.value);
+    }
+    closeKEKModal();
+  } catch (error) {
+    if (isKEKRequired.value) {
+      kekError.value = 'Invalid custom KEK. Please check that you entered the exact password used during encryption.';
+    } else if (kekInput.value.trim().length > 0) {
+      kekError.value = 'Invalid KEK or decryption failed. Please check your KEK.';
+    } else {
+      kekError.value = 'Decryption failed. This secret may have been encrypted with a custom KEK.';
+    }
+  } finally {
+    kekLoading.value = false;
   }
 };
 
