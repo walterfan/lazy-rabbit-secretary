@@ -122,18 +122,19 @@ onMounted(() => {
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 4rem 2rem;
-  border-radius: 20px;
-  margin-bottom: 3rem;
+  padding: 2rem 1.5rem;
+  border-radius: 15px;
+  margin-bottom: 2rem;
 }
 
 .hero-section .display-4 {
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 2.5rem;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
 
 .hero-section .lead {
-  font-size: 1.25rem;
+  font-size: 1rem;
   opacity: 0.95;
 }
 
@@ -165,20 +166,29 @@ onMounted(() => {
 .cta-section {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
-  border-radius: 20px;
-  margin: 2rem 0;
+  border-radius: 12px;
+  margin: 1rem 0;
+  padding: 1.5rem 1rem;
 }
 
 .cta-section h3 {
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.cta-section p {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
 }
 
 /* Button enhancements */
 .btn-lg {
-  padding: 0.75rem 2rem;
+  padding: 0.4rem 1.2rem;
   font-weight: 500;
   border-radius: 50px;
   transition: all 0.3s ease;
+  font-size: 0.85rem;
 }
 
 .btn-primary {
@@ -206,11 +216,23 @@ onMounted(() => {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .hero-section {
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
   
   .hero-section .display-4 {
-    font-size: 2.5rem;
+    font-size: 2rem;
+  }
+  
+  .cta-section {
+    padding: 1rem 0.75rem;
+  }
+  
+  .cta-section h3 {
+    font-size: 1.1rem;
+  }
+  
+  .cta-section p {
+    font-size: 0.85rem;
   }
   
   .overview-card {
@@ -218,13 +240,13 @@ onMounted(() => {
   }
   
   .btn-lg {
-    padding: 0.5rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.35rem 1rem;
+    font-size: 0.8rem;
   }
   
   .d-flex.gap-3 {
     flex-direction: column;
-    gap: 1rem !important;
+    gap: 0.75rem !important;
   }
 }
 

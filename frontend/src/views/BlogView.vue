@@ -5,7 +5,7 @@
       <div class="container">
         <div class="row align-items-center">
           <div class="col-lg-8">
-            <h1 class="display-4 fw-bold mb-3">Welcome to My Blog</h1>
+            <h1 class="display-4 fw-bold mb-3">I write therefore I am</h1>
             <p class="lead mb-4">
               Thoughts, insights, and stories about technology, development, and life.
             </p>

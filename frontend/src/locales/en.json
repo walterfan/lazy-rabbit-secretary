@@ -1,8 +1,8 @@
 {
   "nav": {
     "home": "Home",
-    "getThingsDone": "Get Things Done",
-    "gtdSystem": "GTD System",
+    "gtd": "GTD",
+    "gtdSystem": "Get Things Done",
     "tasks": "Tasks",
     "reminders": "Reminders",
     "books": "Books",
@@ -63,8 +63,8 @@
     "startRecording": "Start recording your ideas and tasks!",
     "loading": "Loading...",
     "editInboxItem": "Edit Inbox Item",
-    "title": "Title",
-    "description": "Description",
+    "title": "Get Things Done",
+    "description": "Capture ideas, organize tasks, and boost your productivity with the GTD methodology",
     "tags": "Tags",
     "cancel": "Cancel",
     "save": "Save",
@@ -153,6 +153,15 @@
     "updated": "Updated",
     "createdBy": "Created By",
     "updatedBy": "Updated By"
+  },
+  "profile": {
+    "description": "Manage your account information and preferences",
+    "accountInfo": "Account Information",
+    "username": "Username",
+    "email": "Email",
+    "createdAt": "Created At",
+    "lastLogin": "Last Login",
+    "preferences": "Preferences"
   },
   "date": {
     "justNow": "just now",

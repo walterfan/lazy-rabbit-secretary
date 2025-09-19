@@ -10,6 +10,8 @@ import HomeView from '@/views/HomeView.vue';
 import HelpView from '@/views/HelpView.vue';
 import CommandsView from '@/views/CommandsView.vue';
 import EncodingToolsView from '@/views/EncodingToolsView.vue';
+import PromptsView from '@/views/PromptsView.vue';
+import ProfileView from '@/views/ProfileView.vue';
 import GTDView from '@/views/GTDView.vue';
 import SignInView from '@/views/SignInView.vue';
 import SignUpView from '@/views/SignUpView.vue';
@@ -46,6 +48,18 @@ const router = createRouter({
       path: '/tools/encoding',
       name: 'encoding-tools',
       component: EncodingToolsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/prompts',
+      name: 'prompts',
+      component: PromptsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
       meta: { requiresAuth: true }
     },
     {
@@ -101,6 +115,11 @@ const router = createRouter({
     {
       path: '/signup',
       name: 'signup',
+      component: SignUpView
+    },
+    {
+      path: '/register',
+      name: 'register',
       component: SignUpView
     },
     {

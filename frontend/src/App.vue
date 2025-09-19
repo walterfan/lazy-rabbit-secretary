@@ -19,7 +19,7 @@
           </li>
           <li class="nav-item dropdown" v-if="isAuthenticated">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              <i class="bi bi-check2-square"></i> {{ $t('nav.getThingsDone') }}
+              <i class="bi bi-check2-square"></i> {{ $t('nav.gtd') }}
             </a>
             <ul class="dropdown-menu">
 

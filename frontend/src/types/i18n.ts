@@ -4,7 +4,7 @@ export type SupportedLocale = 'en' | 'zh';
 export interface I18nMessages {
   nav: {
     home: string;
-    getThingsDone: string;
+    gtd: string;
     gtdSystem: string;
     tasks: string;
     reminders: string;

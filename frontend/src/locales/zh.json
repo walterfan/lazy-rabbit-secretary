@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "首页",
-    "getThingsDone": "高效工作",
+    "gtd": "高效工作",
     "gtdSystem": "GTD系统",
     "tasks": "任务",
     "reminders": "提醒",
@@ -99,6 +99,8 @@
     "notes": "执行笔记",
     "timeEfficiency": "时间效率",
     "totalItems": "总项目数",
+    "title": "搞定",
+    "description": "捕获想法，组织任务，通过GTD方法论提升你的生产力",
     "totalTimeSpent": "总用时",
     "tagsPlaceholder": "用逗号分隔",
     "contextPlaceholder": "@home, @office, @phone",
@@ -153,6 +155,15 @@
     "updated": "更新时间",
     "createdBy": "创建者",
     "updatedBy": "更新者"
+  },
+  "profile": {
+    "description": "管理您的账户信息和偏好设置",
+    "accountInfo": "账户信息",
+    "username": "用户名",
+    "email": "邮箱",
+    "createdAt": "创建时间",
+    "lastLogin": "最后登录",
+    "preferences": "偏好设置"
   },
   "date": {
     "justNow": "刚刚",

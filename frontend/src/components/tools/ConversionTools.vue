@@ -14,6 +14,7 @@
             <option value="html">HTML Escape/Unescape</option>
             <option value="number">Number Base Conversion</option>
             <option value="timestamp">Timestamp-String Conversion</option>
+            <option value="jwt">JWT Encode/Decode</option>
             <option value="native-ascii">Native-ASCII String Conversion</option>
           </select>
         </div>
@@ -303,6 +304,88 @@
           </div>
         </div>
       </div>
+
+      <!-- JWT Tool -->
+      <div v-if="selectedTool === 'jwt'" class="card">
+        <div class="card-header">
+          <h5 class="mb-0">JWT Encode/Decode</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">JWT Token:</label>
+              <textarea 
+                v-model="jwtInput" 
+                class="form-control" 
+                rows="6" 
+                placeholder="Enter JWT token to decode..."
+              ></textarea>
+              <div class="mt-2">
+                <button @click="decodeJWT" class="btn btn-primary me-2">
+                  <i class="bi bi-arrow-down-circle me-1"></i>Decode JWT
+                </button>
+                <button @click="clearJWT" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash me-1"></i>Clear
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Decoded Payload:</label>
+              <textarea 
+                v-model="jwtOutput" 
+                class="form-control" 
+                rows="6" 
+                readonly
+                placeholder="Decoded JWT payload will appear here..."
+              ></textarea>
+              <div class="mt-2">
+                <button @click="copyToClipboard(jwtOutput)" class="btn btn-outline-success btn-sm">
+                  <i class="bi bi-clipboard me-1"></i>Copy
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- JWT Details -->
+          <div class="row mt-4" v-if="jwtDetails.header || jwtDetails.payload">
+            <div class="col-12">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6>JWT Details:</h6>
+                  <div class="row">
+                    <div class="col-md-6" v-if="jwtDetails.header">
+                      <h6>Header:</h6>
+                      <pre class="bg-white p-2 rounded border"><code>{{ jwtDetails.header }}</code></pre>
+                    </div>
+                    <div class="col-md-6" v-if="jwtDetails.payload">
+                      <h6>Payload:</h6>
+                      <pre class="bg-white p-2 rounded border"><code>{{ jwtDetails.payload }}</code></pre>
+                    </div>
+                  </div>
+                  <div class="row mt-2" v-if="jwtDetails.exp || jwtDetails.iat">
+                    <div class="col-12">
+                      <h6>Token Info:</h6>
+                      <ul class="list-unstyled">
+                        <li v-if="jwtDetails.iat"><strong>Issued At:</strong> {{ formatJWTDate(jwtDetails.iat) }}</li>
+                        <li v-if="jwtDetails.exp"><strong>Expires At:</strong> {{ formatJWTDate(jwtDetails.exp) }}</li>
+                        <li v-if="jwtDetails.exp && jwtDetails.iat">
+                          <strong>Valid For:</strong> {{ getTokenValidity(jwtDetails.iat, jwtDetails.exp) }}
+                        </li>
+                        <li v-if="jwtDetails.exp">
+                          <strong>Status:</strong> 
+                          <span :class="isTokenExpired(jwtDetails.exp) ? 'text-danger' : 'text-success'">
+                            {{ isTokenExpired(jwtDetails.exp) ? 'Expired' : 'Valid' }}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -345,6 +428,16 @@ const dateInput = ref<string>('')
 const timestampResult = ref<string>('')
 const dateResult = ref<string>('')
 const isoResult = ref<string>('')
+
+// JWT conversion
+const jwtInput = ref<string>('')
+const jwtOutput = ref<string>('')
+const jwtDetails = ref({
+  header: '',
+  payload: '',
+  exp: null as number | null,
+  iat: null as number | null
+})
 
 // Base64 functions
 const encodeBase64 = () => {
@@ -521,6 +614,91 @@ const getCurrentTimestamp = () => {
   const now = new Date()
   timestampInput.value = Math.floor(now.getTime() / 1000).toString()
   timestampToString()
+}
+
+// JWT functions
+const decodeJWT = () => {
+  try {
+    const token = jwtInput.value.trim()
+    if (!token) {
+      jwtOutput.value = 'Error: No JWT token provided'
+      return
+    }
+
+    // Split JWT into parts
+    const parts = token.split('.')
+    if (parts.length !== 3) {
+      jwtOutput.value = 'Error: Invalid JWT format. JWT should have 3 parts separated by dots.'
+      return
+    }
+
+    // Decode header
+    const header = JSON.parse(atob(parts[0]))
+    jwtDetails.value.header = JSON.stringify(header, null, 2)
+
+    // Decode payload
+    const payload = JSON.parse(atob(parts[1]))
+    jwtDetails.value.payload = JSON.stringify(payload, null, 2)
+    jwtDetails.value.exp = payload.exp || null
+    jwtDetails.value.iat = payload.iat || null
+
+    // Set output
+    jwtOutput.value = JSON.stringify(payload, null, 2)
+
+  } catch (error) {
+    jwtOutput.value = `Error: Failed to decode JWT - ${error instanceof Error ? error.message : 'Unknown error'}`
+    jwtDetails.value = {
+      header: '',
+      payload: '',
+      exp: null,
+      iat: null
+    }
+  }
+}
+
+const clearJWT = () => {
+  jwtInput.value = ''
+  jwtOutput.value = ''
+  jwtDetails.value = {
+    header: '',
+    payload: '',
+    exp: null,
+    iat: null
+  }
+}
+
+const formatJWTDate = (timestamp: number): string => {
+  try {
+    const date = new Date(timestamp * 1000)
+    return date.toLocaleString()
+  } catch (error) {
+    return 'Invalid date'
+  }
+}
+
+const getTokenValidity = (iat: number, exp: number): string => {
+  try {
+    const duration = exp - iat
+    const hours = Math.floor(duration / 3600)
+    const minutes = Math.floor((duration % 3600) / 60)
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    } else {
+      return `${minutes}m`
+    }
+  } catch (error) {
+    return 'Unknown'
+  }
+}
+
+const isTokenExpired = (exp: number): boolean => {
+  try {
+    const now = Math.floor(Date.now() / 1000)
+    return now > exp
+  } catch (error) {
+    return true
+  }
 }
 
 // Utility functions
