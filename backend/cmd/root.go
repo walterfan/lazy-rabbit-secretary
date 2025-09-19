@@ -7,12 +7,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 	"go.uber.org/zap"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "lazy-rabbit-reminder",
+	Use:   "lazy-rabbit-secretary",
 	Short: "A brief description of your application",
 	Long:  `A longer description that spans multiple lines...`,
 }

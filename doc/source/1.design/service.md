@@ -1,6 +1,6 @@
 # Docker Services Stack
 
-This document describes the complete Docker services stack for the Lazy Rabbit Reminder application.
+This document describes the complete Docker services stack for the Lazy Rabbit Secretary application.
 
 ## Architecture Overview
 

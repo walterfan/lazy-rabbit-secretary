@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/email"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 	"gorm.io/gorm"
 )
 

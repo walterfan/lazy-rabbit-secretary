@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 // PlantUMLClient defines the interface for a PlantUML generator

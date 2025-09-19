@@ -9,7 +9,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/walterfan/lazy-rabbit-reminder/bdd/steps"
+	"github.com/walterfan/lazy-rabbit-secretary/bdd/steps"
 )
 
 var opts = godog.Options{
@@ -27,7 +27,7 @@ func TestFeatures(t *testing.T) {
 	o.Paths = []string{"features"}
 
 	status := godog.TestSuite{
-		Name:                "lazy-rabbit-reminder BDD tests",
+		Name:                "lazy-rabbit-secretary BDD tests",
 		ScenarioInitializer: InitializeScenario,
 		Options:             &o,
 	}.Run()
@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 	opts.Paths = []string{"../features"}
 
 	status := godog.TestSuite{
-		Name:                "lazy-rabbit-reminder BDD tests",
+		Name:                "lazy-rabbit-secretary BDD tests",
 		ScenarioInitializer: InitializeScenario,
 		Options:             &opts,
 	}.Run()

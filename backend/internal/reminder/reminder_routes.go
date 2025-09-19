@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
 )
 
 // RegisterRoutes registers HTTP endpoints for managing reminders

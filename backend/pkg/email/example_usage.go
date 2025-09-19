@@ -3,7 +3,7 @@ package email
 import (
 	"fmt"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 // ExampleUsage demonstrates how to use the EmailSender

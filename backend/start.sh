@@ -1,2 +1,2 @@
-./lazy-rabbit-reminder server --config ./config/walter-config.yml
+./lazy-rabbit-secretary server --config ./config/config.yaml
 

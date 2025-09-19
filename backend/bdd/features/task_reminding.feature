@@ -162,7 +162,7 @@ Feature: Task Reminding
       | 🔧 Difficulty: 3/5                               |
       | 🏷️  Tags: review,weekly,important                |
       | 🔄 This is a recurring task instance.            |
-      | Generated automatically by Lazy Rabbit Reminder System |
+      | Generated automatically by Lazy Rabbit Secretary System |
 
   Scenario: Reminder tags formatting
     Given I want to create a task with the following details:

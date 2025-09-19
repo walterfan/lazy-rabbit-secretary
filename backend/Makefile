@@ -1,5 +1,5 @@
 # Define variables
-PROJECT_NAME := lazy-rabbit-reminder
+PROJECT_NAME := lazy-rabbit-secretary
 BINARY_NAME := $(PROJECT_NAME)
 GO := go
 GOFLAGS := -ldflags="-s -w"
@@ -23,7 +23,7 @@ run:
 
 execute:
 	@echo "Execute the project..."
-	./lazy-rabbit-reminder serve --config ./config/walter-config.yml
+	./lazy-rabbit-secretary serve --config ./config/walter-config.yml
 # Test the project
 test:
 	@echo "Running tests..."

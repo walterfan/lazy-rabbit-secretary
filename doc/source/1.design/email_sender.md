@@ -120,19 +120,19 @@ The `email` command supports both implementations:
 ### Direct Email Sender (Default)
 ```bash
 # Test connection
-./lazy-rabbit-reminder email --test
+./lazy-rabbit-secretary email --test
 
 # Send email
-./lazy-rabbit-reminder email --subject "Test" --body "Hello World"
+./lazy-rabbit-secretary email --subject "Test" --body "Hello World"
 ```
 
 ### Interface-based Email Service
 ```bash
 # Test connection with interface implementation
-./lazy-rabbit-reminder email --test --interface
+./lazy-rabbit-secretary email --test --interface
 
 # Send email with interface implementation
-./lazy-rabbit-reminder email --interface --subject "Test" --body "Hello World"
+./lazy-rabbit-secretary email --interface --subject "Test" --body "Hello World"
 ```
 
 ## When to Use Each Implementation
@@ -282,7 +282,7 @@ To run the examples:
 ```go
 package main
 
-import "github.com/walterfan/lazy-rabbit-reminder/pkg/email"
+import "github.com/walterfan/lazy-rabbit-secretary/pkg/email"
 
 func main() {
     // Run all integration examples

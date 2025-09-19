@@ -26,7 +26,7 @@ type LogConfig struct {
 func getDefaultConfig() LogConfig {
 	return LogConfig{
 		Level:      "info",
-		File:       "lazy-rabbit-reminder.log",
+		File:       "lazy-rabbit-secretary.log",
 		Format:     "json",
 		EnableFile: true,
 		MaxSize:    100,

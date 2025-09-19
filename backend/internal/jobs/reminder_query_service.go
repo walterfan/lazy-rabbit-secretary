@@ -3,7 +3,7 @@ package jobs
 import (
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 	"gorm.io/gorm"
 )
 

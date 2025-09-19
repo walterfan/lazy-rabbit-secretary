@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 )
 
 // ReminderService contains business logic for reminders

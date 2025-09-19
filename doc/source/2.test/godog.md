@@ -236,7 +236,7 @@ Feature: User Login
 
 # 🎉 **Conclusion**
 
-The BDD testing framework is successfully implemented and provides a solid foundation for behavior-driven testing of the lazy-rabbit-reminder application. While there are some minor issues with database cleanup and test isolation, the core framework is working and can be easily extended to cover more scenarios.
+The BDD testing framework is successfully implemented and provides a solid foundation for behavior-driven testing of the lazy-rabbit-secretary application. While there are some minor issues with database cleanup and test isolation, the core framework is working and can be easily extended to cover more scenarios.
 
 The implementation demonstrates best practices for:
 - BDD testing with Godog

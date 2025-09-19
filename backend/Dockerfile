@@ -16,8 +16,8 @@ ENV TZ=Asia/Shanghai
 WORKDIR /root/
 
 # Copy the pre-built binary (built locally)
-# Build command: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -ldflags '-linkmode external -extldflags "-static"' -o lazy-rabbit-reminder .
-COPY lazy-rabbit-reminder .
+# Build command: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -ldflags '-linkmode external -extldflags "-static"' -o lazy-rabbit-secretary .
+COPY lazy-rabbit-secretary .
 
 # Copy config files
 COPY config ./config
@@ -29,7 +29,7 @@ COPY certs ./certs
 RUN mkdir -p data logs
 
 # Make binary executable
-RUN chmod +x lazy-rabbit-reminder
+RUN chmod +x lazy-rabbit-secretary
 
 # Expose port (default application port)
 EXPOSE 8080
@@ -39,4 +39,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Command to run the server
-CMD ["./lazy-rabbit-reminder", "server"]
+CMD ["./lazy-rabbit-secretary", "server"]

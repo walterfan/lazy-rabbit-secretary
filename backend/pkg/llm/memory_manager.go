@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 // ChatMessage represents a single message in the conversation

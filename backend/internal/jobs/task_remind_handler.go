@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 )
 
 // TaskRemindHandler implements JobHandler for processing reminders
@@ -166,7 +166,7 @@ Methods: %s
 Targets: %s
 
 Best regards,
-Lazy Rabbit Reminder System`,
+Lazy Rabbit Secretary System`,
 		user.Username,
 		reminder.Name,
 		reminder.Content,

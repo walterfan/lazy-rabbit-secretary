@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/llm"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/spf13/viper"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/llm"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 // CalendarGenerateHandler implements JobHandler for generating calendars
@@ -78,15 +79,22 @@ func (h *CalendarGenerateHandler) callRealLLM(systemPrompt, userPrompt string) (
 
 // saveCalendarContent saves calendar content to file
 func (h *CalendarGenerateHandler) saveCalendarContent(filename, content string) error {
-	// Create calendars directory if it doesn't exist
-	if err := os.MkdirAll("calendars", 0755); err != nil {
-		return fmt.Errorf("failed to create calendars directory: %w", err)
+	// Get the output directory from config, default to "calendars" if not configured
+	outputDir := viper.GetString("calendars.output_dir")
+	if outputDir == "" {
+		outputDir = "./data/calendars" // fallback to default
 	}
 
-	filepath := fmt.Sprintf("calendars/%s", filename)
+	// Create output directory if it doesn't exist
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create calendars directory '%s': %w", outputDir, err)
+	}
+
+	filepath := fmt.Sprintf("%s/%s", outputDir, filename)
 	if err := os.WriteFile(filepath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to write calendar file: %w", err)
+		return fmt.Errorf("failed to write calendar file '%s': %w", filepath, err)
 	}
 
+	h.jobManager.logger.Infof("Calendar saved to: %s", filepath)
 	return nil
 }

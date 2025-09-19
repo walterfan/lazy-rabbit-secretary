@@ -3,7 +3,14 @@ import BooksView from '@/views/BooksView.vue';
 import TasksView from '@/views/TasksView.vue';
 import RemindersView from '@/views/RemindersView.vue';
 import SecretsView from '@/views/SecretsView.vue';
+import PostsView from '@/views/PostsView.vue';
+import BlogView from '@/views/BlogView.vue';
+import BlogPostView from '@/views/BlogPostView.vue';
 import HomeView from '@/views/HomeView.vue';
+import HelpView from '@/views/HelpView.vue';
+import CommandsView from '@/views/CommandsView.vue';
+import EncodingToolsView from '@/views/EncodingToolsView.vue';
+import GTDView from '@/views/GTDView.vue';
 import SignInView from '@/views/SignInView.vue';
 import SignUpView from '@/views/SignUpView.vue';
 import UserManagementView from '@/views/admin/UserManagementView.vue';
@@ -25,9 +32,33 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/help',
+      name: 'help',
+      component: HelpView
+    },
+    {
+      path: '/commands',
+      name: 'commands',
+      component: CommandsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tools/encoding',
+      name: 'encoding-tools',
+      component: EncodingToolsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/gtd',
+      name: 'gtd',
+      component: GTDView,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/books',
       name: 'books',
-      component: BooksView
+      component: BooksView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/tasks',
@@ -44,6 +75,23 @@ const router = createRouter({
       name: 'secrets',
       component: SecretsView,
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/posts',
+      name: 'posts',
+      component: PostsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/blog',
+      name: 'blog',
+      component: BlogView
+    },
+    {
+      path: '/blog/:slug',
+      name: 'blog-post',
+      component: BlogPostView,
+      props: true
     },
     {
       path: '/signin',

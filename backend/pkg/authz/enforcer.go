@@ -10,7 +10,7 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
 )
 
 var Enforcer *casbin.Enforcer

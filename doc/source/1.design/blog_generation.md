@@ -52,7 +52,7 @@ The blog generator is a command-line tool that uses LLM (Large Language Model) s
 2. **Build the Application**:
    ```bash
    cd backend
-   go build -mod=mod -o lazy-rabbit-reminder .
+   go build -mod=mod -o lazy-rabbit-secretary .
    ```
 
 ## Usage
@@ -62,26 +62,26 @@ The blog generator is a command-line tool that uses LLM (Large Language Model) s
 Generate a blog with a technical idea:
 
 ```bash
-./lazy-rabbit-reminder blog --idea "用 webrtc 和 pion 打造一款网络录音机"
+./lazy-rabbit-secretary blog --idea "用 webrtc 和 pion 打造一款网络录音机"
 ```
 
 ### Language Options
 
 ```bash
 # Generate Chinese blog only
-./lazy-rabbit-reminder blog --idea "Building a distributed cache with Redis" --lang cn
+./lazy-rabbit-secretary blog --idea "Building a distributed cache with Redis" --lang cn
 
 # Generate English blog only
-./lazy-rabbit-reminder blog --idea "Building a distributed cache with Redis" --lang en
+./lazy-rabbit-secretary blog --idea "Building a distributed cache with Redis" --lang en
 
 # Generate both languages (default)
-./lazy-rabbit-reminder blog --idea "Building a distributed cache with Redis" --lang both
+./lazy-rabbit-secretary blog --idea "Building a distributed cache with Redis" --lang both
 ```
 
 ### Save to File
 
 ```bash
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "Microservices with Go and Docker" \
     --output "blog_$(date +%Y-%m-%d).md"
 ```
@@ -89,7 +89,7 @@ Generate a blog with a technical idea:
 ### Custom Title and Template
 
 ```bash
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "Machine Learning in Production" \
     --title "My ML Journey - $(date +%Y-%m-%d)" \
     --template "write_daily_blog_en" \
@@ -99,7 +99,7 @@ Generate a blog with a technical idea:
 ### Override LLM Settings
 
 ```bash
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "Kubernetes best practices" \
     --base-url "https://your-llm-endpoint.com/v1" \
     --api-key "your-custom-key" \
@@ -118,10 +118,10 @@ The application uses the following order of precedence for configuration (highes
 For example:
 ```bash
 # This will use the API key from command line, overriding any .env or environment variable
-./lazy-rabbit-reminder blog --idea "test" --api-key "override-key"
+./lazy-rabbit-secretary blog --idea "test" --api-key "override-key"
 
 # This will use settings from .env file if no command-line flags are provided
-./lazy-rabbit-reminder blog --idea "test"
+./lazy-rabbit-secretary blog --idea "test"
 ```
 
 ## Command Line Options
@@ -206,7 +206,7 @@ All templates generate blogs with the following structure:
 ### Example 1: WebRTC Network Recorder
 
 ```bash
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "用 webrtc 和 pion 打造一款网络录音机" \
     --lang cn \
     --title "技术探索 - WebRTC 录音机实现"
@@ -217,7 +217,7 @@ This generates a Chinese blog about building a network audio recorder using WebR
 ### Example 2: Go Microservices
 
 ```bash
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "Building scalable microservices with Go and gRPC" \
     --lang en \
     --output "microservices-blog.md"
@@ -233,7 +233,7 @@ This generates an English blog about microservices and saves it to a file.
 
 IDEA=$(curl -s "https://api.github.com/search/repositories?q=stars:>1000+language:go&sort=stars&order=desc" | jq -r '.items[0].description')
 
-./lazy-rabbit-reminder blog \
+./lazy-rabbit-secretary blog \
     --idea "Exploring: $IDEA" \
     --output "blogs/$(date +%Y-%m-%d)-daily-blog.md" \
     --lang both
@@ -278,7 +278,7 @@ This Go implementation provides the same functionality as your original Python s
 For debugging, you can check the generated prompts by examining the log output:
 
 ```bash
-./lazy-rabbit-reminder blog --idea "test" --lang en 2>&1 | grep "Using LLM settings"
+./lazy-rabbit-secretary blog --idea "test" --lang en 2>&1 | grep "Using LLM settings"
 ```
 
 ## Extending the System

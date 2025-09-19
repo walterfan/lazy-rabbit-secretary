@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/reminder"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/reminder"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/task"
 )
 
 // TaskRemindingContext holds the context for task reminding BDD tests
@@ -681,7 +681,7 @@ func (ctx *TaskRemindingContext) formatReminderContent(task *models.Task) string
 		content += "\n\n🔄 This is a recurring task instance."
 	}
 
-	content += "\n\n---\nGenerated automatically by Lazy Rabbit Reminder System"
+	content += "\n\n---\nGenerated automatically by Lazy Rabbit Secretary System"
 
 	return content
 }

@@ -1,6 +1,6 @@
 # Redis Mini Manual
 
-A comprehensive guide to Redis setup, configuration, and usage in the Lazy Rabbit Reminder project.
+A comprehensive guide to Redis setup, configuration, and usage in the Lazy Rabbit Secretary project.
 
 ## Table of Contents
 
@@ -607,7 +607,7 @@ docker exec -it redis redis-cli FLUSHALL
 **Reset Redis completely**
 ```bash
 docker-compose down
-docker volume rm lazy-rabbit-reminder_redis-data
+docker volume rm lazy-rabbit-secretary_redis-data
 docker-compose up -d redis
 ```
 
@@ -661,4 +661,4 @@ This Redis manual covers:
 - ✅ **Security** - Best practices and recommendations
 - ✅ **Troubleshooting** - Common issues and solutions
 
-Redis is now configured and ready for use in the Lazy Rabbit Reminder project! 🚀
+Redis is now configured and ready for use in the Lazy Rabbit Secretary project! 🚀

@@ -10,9 +10,9 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/gin-gonic/gin"
-	"github.com/walterfan/lazy-rabbit-reminder/bdd/support"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/bdd/support"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

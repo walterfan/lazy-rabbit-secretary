@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 )
 
 // RegisterRoutes registers HTTP endpoints for managing tasks

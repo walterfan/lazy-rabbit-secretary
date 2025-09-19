@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Build script for lazy-rabbit-reminder
+# Build script for lazy-rabbit-secretary
 # This script builds the Go binary locally for Linux deployment
 
 set -e
 
-echo "🚀 Building lazy-rabbit-reminder for Linux deployment..."
+echo "🚀 Building lazy-rabbit-secretary for Linux deployment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-BINARY_NAME="lazy-rabbit-reminder"
+BINARY_NAME="lazy-rabbit-secretary"
 TARGET_OS="linux"
 TARGET_ARCH="amd64"
 
@@ -98,7 +98,7 @@ if [ $? -eq 0 ] && [ -f "$BINARY_NAME" ]; then
     
     echo -e "${GREEN}🎉 Ready for Docker deployment!${NC}"
     echo -e "${BLUE}Next steps:${NC}"
-    echo -e "  1. ${YELLOW}docker build -t lazy-rabbit-reminder .${NC}"
+    echo -e "  1. ${YELLOW}docker build -t lazy-rabbit-secretary .${NC}"
     echo -e "  2. ${YELLOW}docker-compose up -d${NC}"
     echo ""
 else

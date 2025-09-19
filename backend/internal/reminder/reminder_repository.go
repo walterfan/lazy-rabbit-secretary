@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
 	"gorm.io/gorm"
 )
 

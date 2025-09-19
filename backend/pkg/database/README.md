@@ -23,10 +23,10 @@ For faster startup times, you can skip database initialization (AutoMigrate and 
 
 ```bash
 # Fast startup (skip initialization)
-SKIP_DB_INIT=1 ./lazy-rabbit-reminder job --list
+SKIP_DB_INIT=1 ./lazy-rabbit-secretary job --list
 
 # Normal startup (with initialization) - default behavior
-./lazy-rabbit-reminder job --list
+./lazy-rabbit-secretary job --list
 ```
 
 ### When to Use
@@ -67,7 +67,7 @@ database:
 
 **Environment Variable:**
 ```bash
-DB_LOG_LEVEL=info ./lazy-rabbit-reminder
+DB_LOG_LEVEL=info ./lazy-rabbit-secretary
 ```
 
 **Default Behavior:**
@@ -87,7 +87,7 @@ export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USERNAME=postgres
 export DB_PASSWORD=your_password
-export DB_NAME=lazy-rabbit-reminder
+export DB_NAME=lazy-rabbit-secretary
 
 # PostgreSQL specific
 export DB_SSL_MODE=disable
@@ -96,7 +96,7 @@ export DB_SSL_MODE=disable
 export DB_CHARSET=utf8mb4
 
 # SQLite specific
-export DB_FILE_PATH=lazy-rabbit-reminder.db
+export DB_FILE_PATH=lazy-rabbit-secretary.db
 
 # Database logging
 export DB_LOG_LEVEL=error  # silent, error, warn, info, debug
@@ -121,10 +121,10 @@ database:
   port: 5432
   username: postgres
   password: ""
-  database: lazy-rabbit-reminder
+  database: lazy-rabbit-secretary
   ssl_mode: disable
   charset: utf8mb4
-  file_path: lazy-rabbit-reminder.db
+  file_path: lazy-rabbit-secretary.db
 ```
 
 ## Usage
@@ -132,7 +132,7 @@ database:
 ### Initialize Database
 
 ```go
-import "github.com/walterfan/lazy-rabbit-reminder/pkg/database"
+import "github.com/walterfan/lazy-rabbit-secretary/pkg/database"
 
 func main() {
     // Initialize database connection
@@ -152,7 +152,7 @@ func main() {
 #### SQLite (Default)
 ```bash
 export DB_TYPE=sqlite
-export DB_FILE_PATH=lazy-rabbit-reminder.db
+export DB_FILE_PATH=lazy-rabbit-secretary.db
 ```
 
 #### PostgreSQL
@@ -162,7 +162,7 @@ export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USERNAME=postgres
 export DB_PASSWORD=your_password
-export DB_NAME=lazy-rabbit-reminder
+export DB_NAME=lazy-rabbit-secretary
 export DB_SSL_MODE=disable
 ```
 
@@ -173,7 +173,7 @@ export DB_HOST=localhost
 export DB_PORT=3306
 export DB_USERNAME=root
 export DB_PASSWORD=your_password
-export DB_NAME=lazy-rabbit-reminder
+export DB_NAME=lazy-rabbit-secretary
 export DB_CHARSET=utf8mb4
 ```
 
@@ -188,13 +188,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: lazy-rabbit-reminder
+      POSTGRES_DB: lazy-rabbit-secretary
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  lazy-rabbit-reminder:
+  lazy-rabbit-secretary:
     build: .
     environment:
       DB_TYPE: postgres
@@ -202,7 +202,7 @@ services:
       DB_PORT: 5432
       DB_USERNAME: postgres
       DB_PASSWORD: your_password
-      DB_NAME: lazy-rabbit-reminder
+      DB_NAME: lazy-rabbit-secretary
     depends_on:
       - postgres
 ```
@@ -215,7 +215,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: your_password
-      MYSQL_DATABASE: lazy-rabbit-reminder
+      MYSQL_DATABASE: lazy-rabbit-secretary
       MYSQL_USER: user
       MYSQL_PASSWORD: user_password
     ports:
@@ -223,7 +223,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  lazy-rabbit-reminder:
+  lazy-rabbit-secretary:
     build: .
     environment:
       DB_TYPE: mysql
@@ -231,7 +231,7 @@ services:
       DB_PORT: 3306
       DB_USERNAME: user
       DB_PASSWORD: user_password
-      DB_NAME: lazy-rabbit-reminder
+      DB_NAME: lazy-rabbit-secretary
     depends_on:
       - mysql
 ```

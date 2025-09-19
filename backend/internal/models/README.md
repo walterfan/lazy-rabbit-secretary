@@ -137,7 +137,7 @@ All models support soft deletes via `gorm.DeletedAt`
 
 ### Auto-Migration
 ```go
-import "github.com/walterfan/lazy-rabbit-reminder/pkg/models"
+import "github.com/walterfan/lazy-rabbit-secretary/pkg/models"
 
 // Migrate all models
 err := db.AutoMigrate(models.GetAllModels()...)

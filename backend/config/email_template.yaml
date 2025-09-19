@@ -113,7 +113,7 @@ templates:
 
 # Application configuration for templates
 app:
-  name: "Lazy Rabbit Reminder"
+  name: "Lazy Rabbit Secretary"
   base_url: "http://localhost:8080"
   admin_panel_url: "/admin/registrations"
   dashboard_url: "/dashboard"
@@ -123,6 +123,6 @@ app:
 
 # Default template variables
 defaults:
-  app_name: "Lazy Rabbit Reminder"
+  app_name: "Lazy Rabbit Secretary"
   expiry_hours: 24
   time_format: "2006-01-02 15:04:05 MST"

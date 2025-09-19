@@ -72,7 +72,7 @@ make -f Makefile.docker deploy
 
 # Manual steps
 ./build-simple.sh
-docker build -t lazy-rabbit-reminder .
+docker build -t lazy-rabbit-secretary .
 cd ../deploy && docker-compose up -d --build web
 ```
 

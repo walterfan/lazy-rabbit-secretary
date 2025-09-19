@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "lazy-rabbit-reminder-tests"
+name = "lazy-rabbit-secretary-tests"
 version = "0.1.0"
-description = "Integration tests for Lazy Rabbit Reminder API"
+description = "Integration tests for Lazy Rabbit Secretary API"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 package-mode = false

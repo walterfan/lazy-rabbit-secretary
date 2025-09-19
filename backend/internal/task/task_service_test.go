@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 )
 
 // =============================================================================
@@ -482,7 +482,7 @@ func TestFormatReminderContent(t *testing.T) {
 	assert.Contains(t, content, "🔧 Difficulty: 2/5")
 	assert.Contains(t, content, "🏷️  Tags: test,unit")
 	assert.Contains(t, content, "🔄 This is a recurring task instance.")
-	assert.Contains(t, content, "Generated automatically by Lazy Rabbit Reminder System")
+	assert.Contains(t, content, "Generated automatically by Lazy Rabbit Secretary System")
 }
 
 func TestFormatReminderTags(t *testing.T) {

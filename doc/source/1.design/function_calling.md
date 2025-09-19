@@ -120,13 +120,13 @@ prompts:
 
 ```bash
 # Use default template with function calls
-./lazy-rabbit-reminder blog --idea "WebRTC录音机" --city "北京"
+./lazy-rabbit-secretary blog --idea "WebRTC录音机" --city "北京"
 
 # Specify custom city for weather
-./lazy-rabbit-reminder blog --idea "微服务架构" --city "上海" --lang cn
+./lazy-rabbit-secretary blog --idea "微服务架构" --city "上海" --lang cn
 
 # Test function calling system
-./lazy-rabbit-reminder test-functions
+./lazy-rabbit-secretary test-functions
 ```
 
 ### Environment Setup for Weather
@@ -136,7 +136,7 @@ prompts:
 export GAODE_KEY="your-gaode-api-key"
 
 # Then run blog generation
-./lazy-rabbit-reminder blog --idea "云原生技术" --city "深圳"
+./lazy-rabbit-secretary blog --idea "云原生技术" --city "深圳"
 ```
 
 ## Adding Custom Functions
@@ -222,7 +222,7 @@ if err != nil {
 
 ```bash
 # Run comprehensive function test
-./lazy-rabbit-reminder test-functions
+./lazy-rabbit-secretary test-functions
 ```
 
 ### Test Specific Function
@@ -230,7 +230,7 @@ if err != nil {
 ```bash
 # Test with weather API (requires GAODE_KEY)
 export GAODE_KEY="your-api-key"
-./lazy-rabbit-reminder blog --idea "Test" --city "北京"
+./lazy-rabbit-secretary blog --idea "Test" --city "北京"
 ```
 
 ## Performance Considerations

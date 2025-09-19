@@ -116,7 +116,7 @@ func TestEmailConfirmationTemplate(t *testing.T) {
 		t.Errorf("Body should contain confirmation URL, got: %s", message.Body)
 	}
 
-	if !contains(message.Body, "Lazy Rabbit Reminder") {
+	if !contains(message.Body, "Lazy Rabbit Secretary") {
 		t.Errorf("Body should contain app name, got: %s", message.Body)
 	}
 

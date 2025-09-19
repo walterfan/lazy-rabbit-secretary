@@ -1,5 +1,7 @@
-lazy-rabbit-reminder
-lazy-rabbit-reminder.db
+lazy-rabbit-secretary
+walter-*
+*.db
+data/
 certs/
 vendor/
 .idea/
@@ -8,7 +10,6 @@ target/
 # Compiled class file
 *.class
 .env
-walter-config.yml
 # gradle
 node_modules/
 .gradle

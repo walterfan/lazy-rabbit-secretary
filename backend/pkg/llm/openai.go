@@ -11,7 +11,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 // LLMSettings represents configuration for LLM requests

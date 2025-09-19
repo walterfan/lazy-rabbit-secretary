@@ -10,10 +10,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/llm"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/tools"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/util"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/llm"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/tools"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/util"
 )
 
 var blogCmd = &cobra.Command{

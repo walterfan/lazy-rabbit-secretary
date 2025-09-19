@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/email"
 	"gorm.io/gorm"
 )
 
@@ -301,7 +301,7 @@ This is your scheduled reminder:
 🎯 Targets: %s
 
 ---
-Sent by Lazy Rabbit Reminder System
+Sent by Lazy Rabbit Secretary System
 Time: %s`,
 		user.Username,
 		reminder.Name,
@@ -534,7 +534,7 @@ func (jm *JobManager) formatTaskReminderContent(task *models.Task) string {
 		content += "\n\n🔄 This is a recurring task instance."
 	}
 
-	content += "\n\n---\nGenerated automatically by Lazy Rabbit Reminder System"
+	content += "\n\n---\nGenerated automatically by Lazy Rabbit Secretary System"
 
 	return content
 }

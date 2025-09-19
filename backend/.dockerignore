@@ -5,9 +5,9 @@
 *.so
 *.dylib
 # Keep the main binary for copying to Docker
-# lazy-rabbit-reminder
-lazy-rabbit-reminder.exe
-lazy-rabbit-reminder-dev
+# lazy-rabbit-secretary
+lazy-rabbit-secretary.exe
+lazy-rabbit-secretary-dev
 walter-config.yml
 # Ignore test binary
 *.test

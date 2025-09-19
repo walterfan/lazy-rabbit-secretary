@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
 )
 
 // PermissionEngine handles permission evaluation using AWS-style policies

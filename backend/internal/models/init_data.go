@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
@@ -16,6 +16,7 @@ import (
 
 const (
 	DEFAULT_REALM_ID = "65e52554-40f7-4afa-b41f-e897b94d31b2"
+	PUBLIC_REALM_ID  = "7e16d660-da8a-45c9-aa17-ccb9900723ce"
 	ADMIN_USER_ID    = "7ec73634-2569-48fe-a2e5-d124b7d922ae"
 	ADMIN_ROLE_ID    = "6c12df67-5e77-44be-b6ca-3ccc1cc61c00"
 	USER_ROLE_ID     = "8cb242bb-0f71-443d-ad78-b51dbdafc4ab"
@@ -75,6 +76,12 @@ func initRealms(db *gorm.DB) error {
 			ID:          DEFAULT_REALM_ID,
 			Name:        "default",
 			Description: "Default organizational realm for the application",
+			CreatedBy:   "system",
+		},
+		{
+			ID:          PUBLIC_REALM_ID,
+			Name:        "public",
+			Description: "Public realm for publicly accessible content",
 			CreatedBy:   "system",
 		},
 	}

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/util"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/util"
 )
 
 type SSHParams struct {

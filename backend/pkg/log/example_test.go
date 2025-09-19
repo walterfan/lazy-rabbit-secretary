@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 func TestLoggerWithDifferentLevels(t *testing.T) {

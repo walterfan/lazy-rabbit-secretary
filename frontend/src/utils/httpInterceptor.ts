@@ -1,9 +1,11 @@
 /**
  * HTTP Interceptor for automatic token refresh
  * Handles 401 responses by refreshing tokens and retrying requests
+ * Proactively refreshes tokens before they expire
  */
 
 import { useAuthStore } from '@/stores/authStore';
+import { isTokenExpiringSoon, isTokenExpired } from '@/utils/jwtUtils';
 
 interface RequestConfig {
   url: string;
@@ -36,6 +38,33 @@ class HttpInterceptor {
   }
 
   /**
+   * Check if token needs refresh and refresh if necessary
+   * Returns true if token is valid (either already valid or successfully refreshed)
+   */
+  private async ensureValidToken(): Promise<boolean> {
+    const authStore = this.getAuthStore();
+    
+    if (!authStore.token) {
+      return false;
+    }
+
+    // Check if token is already expired
+    if (isTokenExpired(authStore.token)) {
+      console.log('Token is expired, attempting refresh...');
+      return await authStore.refreshAuth();
+    }
+
+    // Check if token is expiring soon (within 5 minutes)
+    if (isTokenExpiringSoon(authStore.token, 300)) {
+      console.log('Token is expiring soon, proactively refreshing...');
+      return await authStore.refreshAuth();
+    }
+
+    // Token is still valid
+    return true;
+  }
+
+  /**
    * Process failed requests queue after token refresh
    */
   private processQueue(error: any, token: string | null = null) {
@@ -51,16 +80,26 @@ class HttpInterceptor {
   }
 
   /**
-   * Make HTTP request with automatic retry on 401
+   * Make HTTP request with automatic retry on 401 and proactive token refresh
    */
   async makeRequest(config: RequestConfig): Promise<ResponseConfig> {
+    // Ensure we have a valid token before making the request
+    const authStore = this.getAuthStore();
+    if (authStore.token) {
+      const tokenValid = await this.ensureValidToken();
+      if (!tokenValid) {
+        console.error('Failed to obtain valid token');
+        this.redirectToLogin();
+        throw new Error('Authentication failed. Please log in again.');
+      }
+    }
+
     // Add authorization header if token exists
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...config.headers,
     };
 
-    const authStore = this.getAuthStore();
     if (authStore.token) {
       headers['Authorization'] = `Bearer ${authStore.token}`;
     }
@@ -82,7 +121,7 @@ class HttpInterceptor {
     }
 
     // Handle 401 Unauthorized - try to refresh token
-    if (response.status === 401 && this.getAuthStore().refreshToken) {
+    if (response.status === 401 && authStore.refreshToken) {
       return this.handleUnauthorized(config);
     }
 

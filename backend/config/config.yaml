@@ -5,13 +5,17 @@ server:
     cert_file: "certs/certificate.pem"
     key_file: "certs/private.pem"
 log:
-  file: "lazy-rabbit-reminder.log"
+  file: "lazy-rabbit-secretary.log"
   level: "info"  # debug, info, warn, error, fatal, panic
   format: "json"  # json or console
   enable_file: true  # whether to write logs to file
   max_size: 100  # maximum log file size in MB
 database:
   log_level: "info"  # silent, error, warn, info, debug (controls SQL query logging)
+calendars:
+  output_dir: "./data/calendars"
+blogs:
+  output_dir: "./data/blogs"
 static_routes:
   public:
     - path: "/web"

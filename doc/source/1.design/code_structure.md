@@ -119,7 +119,7 @@ This architecture allows the application to serve as both a web server and a tas
 ## code structure
 
 ```
-lazy-rabbit-reminder/backend/
+lazy-rabbit-secretary/backend/
 ```
 
 

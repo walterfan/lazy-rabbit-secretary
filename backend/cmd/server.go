@@ -13,11 +13,11 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/api"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/jobs"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/api"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/jobs"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/email"
 )
 
 var serverCmd = &cobra.Command{
@@ -105,8 +105,8 @@ func initAuth(logger *zap.Logger) *auth.AuthService {
 
 	// Create mock implementations (you'll need to implement these properly later)
 	userService := &auth.SimpleUserService{}
-	passwordManager := auth.NewPasswordManager(10)                                                                      // cost parameter
-	jwtManager, err := auth.NewJWTManager("./certs/private.pem", "./certs/public.pem", "lazy-rabbit-reminder", "users") // empty paths for now
+	passwordManager := auth.NewPasswordManager(10)                                                                       // cost parameter
+	jwtManager, err := auth.NewJWTManager("./certs/private.pem", "./certs/public.pem", "lazy-rabbit-secretary", "users") // empty paths for now
 	if err != nil {
 		logger.Fatal("Failed to create JWT manager", zap.Error(err))
 	}

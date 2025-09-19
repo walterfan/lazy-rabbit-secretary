@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 type ChangeItem struct {

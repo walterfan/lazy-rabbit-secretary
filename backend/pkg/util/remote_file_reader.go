@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
 

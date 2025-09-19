@@ -1,6 +1,6 @@
 # Docker Services Integration
 
-This document describes the complete Docker services stack for the Lazy Rabbit Reminder application, including PostgreSQL with pgvector, NATS message queue, pgweb database admin, and PlantUML server.
+This document describes the complete Docker services stack for the Lazy Rabbit Secretary application, including PostgreSQL with pgvector, NATS message queue, pgweb database admin, and PlantUML server.
 
 ## Overview
 
@@ -79,7 +79,7 @@ curl http://localhost:8222/varz
 
 ## Integration Points
 
-### Potential Use Cases in Lazy Rabbit Reminder
+### Potential Use Cases in Lazy Rabbit Secretary
 
 1. **Email Queue**: Asynchronous email sending
    - Registration confirmations

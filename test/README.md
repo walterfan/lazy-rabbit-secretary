@@ -1,6 +1,6 @@
 # API Testing
 
-This directory contains pytest-based integration tests for the Lazy Rabbit Reminder API.
+This directory contains pytest-based integration tests for the Lazy Rabbit Secretary API.
 
 ## Test Suites
 

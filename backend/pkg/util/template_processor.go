@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/tools"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/tools"
 )
 
 // TemplateProcessor handles template rendering with function calling support

@@ -31,15 +31,32 @@ package models
 // Prompt - AI prompt templates (existing functionality)
 //
 // =====================
+// 📝 Blog & CMS Models (WordPress-style)
+// =====================
+//
+// Post - Blog posts and pages with WordPress-like features
+// PostMeta - Additional metadata for posts (custom fields)
+// PostCategory - Hierarchical categories for content organization
+// PostTag - Flat tags for content labeling
+// PostCategoryRelation - Many-to-many posts ↔ categories
+// PostTagRelation - Many-to-many posts ↔ tags
+// Comment - Threaded comments on posts
+//
+// =====================
 // 🔗 Key Relationships
 // =====================
 //
-// Realm (1) → (many) Users, Roles, Policies, Projects
+// Realm (1) → (many) Users, Roles, Policies, Projects, Posts
 // User (many) ← → (many) Roles (via UserRole)
 // User (many) ← → (many) Policies (via UserPolicy)
 // Role (many) ← → (many) Policies (via RolePolicy)
 // Policy (1) → (many) Statements
 // Project (1) → (many) Code, Documents
+// Post (1) → (many) PostMeta, Comments
+// Post (many) ← → (many) PostCategory (via PostCategoryRelation)
+// Post (many) ← → (many) PostTag (via PostTagRelation)
+// PostCategory (1) → (many) PostCategory (hierarchical)
+// Comment (1) → (many) Comment (threaded replies)
 //
 // =====================
 // 🎯 Permission Evaluation (AWS-style)
@@ -62,6 +79,7 @@ package models
 // GetAllModels returns a slice of all model types for GORM AutoMigrate
 func GetAllModels() []interface{} {
 	return []interface{}{
+		// Authentication & Authorization
 		&Realm{},
 		&User{},
 		&Role{},
@@ -71,6 +89,8 @@ func GetAllModels() []interface{} {
 		&RolePolicy{},
 		&UserPolicy{},
 		&ResourcePolicy{},
+
+		// Project & Content Management
 		&Project{},
 		&Book{},
 		&BookTag{},
@@ -78,9 +98,24 @@ func GetAllModels() []interface{} {
 		&Document{},
 		&Prompt{},
 		&Secret{},
+
+		// Task & Reminder System
 		&Task{},
 		&Reminder{},
 		&TaskReminder{},
+
+		// GTD System
+		&InboxItem{},
+		&DailyChecklistItem{},
+
+		// Blog & CMS (WordPress-style)
+		&Post{},
+		&PostMeta{},
+		&PostCategory{},
+		&PostTag{},
+		&PostCategoryRelation{},
+		&PostTagRelation{},
+		&Comment{},
 	}
 }
 
@@ -99,7 +134,24 @@ type DatabaseModels struct {
 
 	// Project & Content Management
 	Projects  []Project
+	Books     []Book
+	BookTags  []BookTag
 	Codes     []Code
 	Documents []Document
 	Prompts   []Prompt
+	Secrets   []Secret
+
+	// Task & Reminder System
+	Tasks         []Task
+	Reminders     []Reminder
+	TaskReminders []TaskReminder
+
+	// Blog & CMS (WordPress-style)
+	Posts                 []Post
+	PostMetas             []PostMeta
+	PostCategories        []PostCategory
+	PostTags              []PostTag
+	PostCategoryRelations []PostCategoryRelation
+	PostTagRelations      []PostTagRelation
+	Comments              []Comment
 }

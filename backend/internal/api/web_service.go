@@ -18,11 +18,17 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/auth"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/reminder"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/secret"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/task"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/metrics"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/book"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/daily"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/inbox"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/post"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/prompt"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/reminder"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/secret"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/task"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/metrics"
 )
 
 type StaticRoute struct {
@@ -188,6 +194,25 @@ func (thiz *WebApiService) Run() {
 	taskRepo := task.NewTaskRepository()
 	taskService := task.NewTaskService(taskRepo, reminderService)
 	task.RegisterRoutes(r, taskService, authMiddleware)
+
+	// Register prompt routes
+	promptRoutes := prompt.NewPromptRoutes(database.GetDB())
+	promptRoutes.RegisterRoutes(r)
+
+	bookRepo := book.NewBookRepository()
+	bookService := book.NewBookService(bookRepo)
+	book.RegisterRoutes(r, bookService, authMiddleware)
+
+	// Register post routes
+	postService := post.NewPostService(database.GetDB())
+	post.RegisterRoutes(r, postService, authMiddleware)
+
+	// Register GTD system routes
+	inboxService := inbox.NewInboxService(database.GetDB())
+	inbox.RegisterInboxRoutes(r, inboxService, authMiddleware)
+
+	dailyService := daily.NewDailyService(database.GetDB())
+	daily.RegisterDailyRoutes(r, dailyService, authMiddleware)
 
 	// Default route for SPA
 	r.NoRoute(func(ctx *gin.Context) {

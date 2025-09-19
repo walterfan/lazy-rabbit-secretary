@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/spf13/viper"
-	"github.com/walterfan/lazy-rabbit-reminder/internal/models"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -71,10 +71,10 @@ func loadDatabaseConfig() *DatabaseConfig {
 		Port:     getEnvIntOrDefault("DB_PORT", 5432),
 		Username: getEnvOrDefault("DB_USER", ""),
 		Password: getEnvOrDefault("DB_PASS", ""),
-		Database: getEnvOrDefault("DB_NAME", "lazy-rabbit-reminder"),
+		Database: getEnvOrDefault("DB_NAME", "lazy-rabbit-secretary"),
 		SSLMode:  getEnvOrDefault("DB_SSL_MODE", "disable"),
 		Charset:  getEnvOrDefault("DB_CHARSET", "utf8mb4"),
-		FilePath: getEnvOrDefault("DB_FILE_PATH", "lazy-rabbit-reminder.db"),
+		FilePath: getEnvOrDefault("DB_FILE_PATH", "lazy-rabbit-secretary.db"),
 		LogLevel: getEnvOrDefault("DB_LOG_LEVEL", "error"), // Default to error level to reduce noise
 	}
 
@@ -147,7 +147,7 @@ func connectDatabase(config *DatabaseConfig) (*gorm.DB, error) {
 func connectSQLite(config *DatabaseConfig) (*gorm.DB, error) {
 	dsn := config.FilePath
 	if dsn == "" {
-		dsn = "lazy-rabbit-reminder.db"
+		dsn = "lazy-rabbit-secretary.db"
 	}
 
 	log.GetLogger().Infof("Connecting to SQLite database: %s", dsn)

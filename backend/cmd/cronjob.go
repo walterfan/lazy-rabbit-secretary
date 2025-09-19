@@ -8,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/walterfan/lazy-rabbit-reminder/internal/jobs"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/database"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/jobs"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 var (
@@ -32,14 +32,14 @@ Available job handlers:
 
 Examples:
   # List all available job handlers
-  ./lazy-rabbit-reminder job --list
+  ./lazy-rabbit-secretary job --list
 
   # Execute a specific job handler once
-  ./lazy-rabbit-reminder job checkTask
-  ./lazy-rabbit-reminder job --name writeBlog
+  ./lazy-rabbit-secretary job checkTask
+  ./lazy-rabbit-secretary job --name writeBlog
 
   # Start the full cron scheduler (runs continuously)
-  ./lazy-rabbit-reminder job --scheduler`,
+  ./lazy-rabbit-secretary job --scheduler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize unified logger first
 		err := log.InitLogger()
@@ -61,7 +61,6 @@ Examples:
 
 		// Initialize JobManager with proper dependencies
 		jm := jobs.NewJobManager(sugar.Desugar(), rdb, db)
-
 
 		// Handle list jobs flag
 		if listJobs {
@@ -133,11 +132,11 @@ func listAvailableJobs() {
 		Description string
 		Example     string
 	}{
-		{"checkTask", "Check tasks for reminder generation", "./lazy-rabbit-reminder job checkTask"},
-		{"remindTask", "Process due reminders and send notifications", "./lazy-rabbit-reminder job remindTask"},
-		{"writeBlog", "Generate daily technical blog content", "./lazy-rabbit-reminder job writeBlog"},
-		{"generateCalendar", "Generate daily calendar content", "./lazy-rabbit-reminder job generateCalendar"},
-		{"scheduler", "Start continuous cron scheduler", "./lazy-rabbit-reminder job scheduler"},
+		{"checkTask", "Check tasks for reminder generation", "./lazy-rabbit-secretary job checkTask"},
+		{"remindTask", "Process due reminders and send notifications", "./lazy-rabbit-secretary job remindTask"},
+		{"writeBlog", "Generate daily technical blog content", "./lazy-rabbit-secretary job writeBlog"},
+		{"generateCalendar", "Generate daily calendar content", "./lazy-rabbit-secretary job generateCalendar"},
+		{"scheduler", "Start continuous cron scheduler", "./lazy-rabbit-secretary job scheduler"},
 	}
 
 	for _, job := range jobs {

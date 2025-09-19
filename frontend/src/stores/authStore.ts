@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
+import { tokenRefreshService } from '@/services/tokenRefreshService';
 
 export interface User {
   id: string;
@@ -59,6 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('refresh_token', data.refresh_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      // Start token refresh monitoring
+      tokenRefreshService.start();
+
       return data;
     } catch (error) {
       console.error('Sign in error:', error);
@@ -94,6 +98,9 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const signOut = () => {
+    // Stop token refresh monitoring
+    tokenRefreshService.stop();
+
     user.value = null;
     token.value = null;
     refreshToken.value = null;
@@ -154,6 +161,11 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = storedToken;
       refreshToken.value = storedRefreshToken;
       user.value = JSON.parse(storedUser);
+      
+      // Start token refresh monitoring if we have valid tokens
+      if (storedRefreshToken) {
+        tokenRefreshService.start();
+      }
     }
   };
 

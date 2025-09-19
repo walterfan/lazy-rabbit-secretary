@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/email"
-	"github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/email"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 )
 
 var (
@@ -109,20 +109,20 @@ func init() {
 
 	// Examples
 	emailCmd.Example = `  # Test SMTP connection
-  lazy-rabbit-reminder email --test
+  lazy-rabbit-secretary email --test
 
   # Send simple email to default recipient
-  lazy-rabbit-reminder email --subject "Test" --body "Hello World"
+  lazy-rabbit-secretary email --subject "Test" --body "Hello World"
 
   # Send email to specific recipients
-  lazy-rabbit-reminder email \
+  lazy-rabbit-secretary email \
     --subject "Important Notice" \
     --body "This is important" \
     --to "user1@example.com,user2@example.com" \
     --cc "manager@example.com"
 
   # Send email with multiline body
-  lazy-rabbit-reminder email \
+  lazy-rabbit-secretary email \
     --subject "Welcome" \
     --body "Welcome to our system!
 

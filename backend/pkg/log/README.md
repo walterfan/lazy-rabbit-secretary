@@ -1,6 +1,6 @@
 # Unified Logger Package
 
-This package provides a unified, configurable logging solution for the Lazy Rabbit Reminder application using Uber's Zap logger.
+This package provides a unified, configurable logging solution for the Lazy Rabbit Secretary application using Uber's Zap logger.
 
 ## Features
 
@@ -17,7 +17,7 @@ This package provides a unified, configurable logging solution for the Lazy Rabb
 
 ```yaml
 log:
-  file: "lazy-rabbit-reminder.log"  # Log file path
+  file: "lazy-rabbit-secretary.log"  # Log file path
   level: "info"                     # Log level: debug, info, warn, error, fatal, panic
   format: "json"                    # Output format: json or console
   enable_file: true                 # Enable/disable file logging
@@ -35,7 +35,7 @@ Environment variables take precedence over config file settings:
 ### Programmatic Configuration
 
 ```go
-import "github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+import "github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 
 // Custom configuration
 config := &log.LogConfig{
@@ -57,7 +57,7 @@ if err != nil {
 ### Basic Logging
 
 ```go
-import "github.com/walterfan/lazy-rabbit-reminder/pkg/log"
+import "github.com/walterfan/lazy-rabbit-secretary/pkg/log"
 
 // Initialize logger (usually done once at application startup)
 err := log.InitLogger()
@@ -208,7 +208,7 @@ log:
   level: "info"
   format: "json"
   enable_file: true
-  file: "/var/log/lazy-rabbit-reminder.log"
+  file: "/var/log/lazy-rabbit-secretary.log"
   max_size: 100
 ```
 

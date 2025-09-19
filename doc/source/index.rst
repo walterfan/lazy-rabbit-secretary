@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Lazy Rabbit Reminder
+Lazy Rabbit Secretary
 =======================================
 
 
@@ -13,7 +13,7 @@ Lazy Rabbit Reminder
 
 
 ============= =============
-**Abstract**  Lazy Rabbit Reminder
+**Abstract**  Lazy Rabbit Secretary
 **Authors**   Walter Fan
 **Category**  learning note
 **Status**    WIP
