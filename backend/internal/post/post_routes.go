@@ -53,6 +53,7 @@ func RegisterRoutes(router *gin.Engine, service *PostService, middleware *auth.A
 		adminGroup.DELETE("/:id", deletePost(service))
 		adminGroup.POST("/:id/publish", publishPost(service))
 		adminGroup.POST("/:id/schedule", schedulePost(service))
+		adminGroup.POST("/:id/refine", refinePost(service))
 		adminGroup.GET("/author/:authorId", getPostsByAuthor(service))
 	}
 }
@@ -416,6 +417,52 @@ func updatePost(service *PostService) gin.HandlerFunc {
 			}
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to update post",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, post)
+	}
+}
+
+func refinePost(service *PostService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		if id == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Post ID is required",
+			})
+			return
+		}
+
+		var req RefineRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "Invalid request format",
+				"details": err.Error(),
+			})
+			return
+		}
+
+		// Get user ID from auth context
+		userID, _ := auth.GetCurrentUser(c)
+
+		post, err := service.RefinePost(id, &req, userID)
+		if err != nil {
+			if strings.Contains(err.Error(), "not found") {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error": "Post not found",
+				})
+				return
+			}
+			if strings.Contains(err.Error(), "validation failed") {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to refine post",
 			})
 			return
 		}

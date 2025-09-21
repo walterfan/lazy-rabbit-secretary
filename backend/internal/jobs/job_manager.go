@@ -149,6 +149,9 @@ func (jm *JobManager) executeFunction(functionName, param string) {
 
 // readUnfinishedTasks retrieves all unfinished task keys from Redis
 func (jm *JobManager) readUnfinishedTasks() ([]string, error) {
+	if jm.rdb == nil {
+		return nil, fmt.Errorf("redis client not initialized")
+	}
 	keys, err := jm.rdb.Keys(jm.ctx, "task:*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read task keys from Redis: %w", err)
@@ -158,6 +161,9 @@ func (jm *JobManager) readUnfinishedTasks() ([]string, error) {
 
 // publishTaskExpiryEvent publishes a task expiry event to Redis
 func (jm *JobManager) publishTaskExpiryEvent(taskID string) error {
+	if jm.rdb == nil {
+		return fmt.Errorf("redis client not initialized")
+	}
 	err := jm.rdb.Publish(jm.ctx, "task_expiry_channel", taskID).Err()
 	if err != nil {
 		return fmt.Errorf("failed to publish task expiry event: %w", err)
@@ -168,7 +174,10 @@ func (jm *JobManager) publishTaskExpiryEvent(taskID string) error {
 // checkTaskExpiry checks for expired tasks and publishes events
 func (jm *JobManager) checkTaskExpiry() {
 	jm.logger.Debug("Checking for expired tasks...")
-
+	if jm.rdb == nil {
+		jm.logger.Warn("Redis client not initialized, skipping task expiry check")
+		return
+	}
 	tasks, err := jm.readUnfinishedTasks()
 	if err != nil {
 		jm.logger.Errorf("Failed to read unfinished tasks: %v", err)
@@ -642,6 +651,10 @@ func (jm *JobManager) parseFunctionCall(functionCall string) (string, string) {
 
 // setTaskDeadline sets a task deadline in Redis if specified
 func (jm *JobManager) setTaskDeadline(theJob CronJob) {
+	if jm.rdb == nil {
+		jm.logger.Warn("Redis client not initialized, skipping task deadline check")
+		return
+	}
 	if theJob.Deadline == "" {
 		return
 	}

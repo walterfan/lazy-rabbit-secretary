@@ -19,7 +19,7 @@ services:
       - lazy-rabbit-net
 
   web:
-    container_name: lazy_rabbit_reminder
+    container_name: lazy_rabbit_secretary
     build: ../backend
     ports:
       - "8000:2025"
@@ -82,7 +82,7 @@ services:
     restart: unless-stopped
     command: |
       sh -c "
-        redis-server /usr/local/etc/redis/redis.conf --requirepass $${REDIS_PASSWORD}
+        redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
       "
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-lazy-rabbit}
@@ -111,22 +111,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  pgweb:
-    image: sosedoff/pgweb
-    container_name: pgweb
-    # Remove port exposure as nginx will handle it
-    expose:
-      - "8081"
-    ports:
-      - "8081:8081"
-    environment:
-      - PGWEB_DATABASE_URL=${DB_URL}
-    depends_on:
-      - pgvector
-    networks:
-      - lazy-rabbit-net
-    restart: unless-stopped
 
   plantuml:
     image: plantuml/plantuml-server:jetty

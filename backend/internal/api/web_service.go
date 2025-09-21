@@ -107,6 +107,13 @@ func (thiz *WebApiService) Run() {
 		ctx := context.Background()
 		newsKey := "news:latest"
 
+		if thiz.redisClient == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": "Redis client not initialized",
+			})
+			return
+		}
+
 		// Fetch all items sorted by timestamp desc
 		items, err := thiz.redisClient.ZRevRangeWithScores(ctx, newsKey, 0, -1).Result()
 		if err != nil {

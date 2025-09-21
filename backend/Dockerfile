@@ -1,4 +1,4 @@
-# Dockerfile for pre-built binary deployment
+# Multi-architecture Dockerfile for pre-built binary deployment
 # This expects the binary to be built locally and copied to the container
 FROM alpine:latest
 
@@ -15,9 +15,14 @@ ENV TZ=Asia/Shanghai
 
 WORKDIR /root/
 
-# Copy the pre-built binary (built locally)
-# Build command: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -ldflags '-linkmode external -extldflags "-static"' -o lazy-rabbit-secretary .
-COPY lazy-rabbit-secretary .
+# Copy the pre-built static binary based on target architecture
+# Build command: make build-static
+# The script will determine the correct binary to copy
+ARG TARGETARCH
+ARG TARGETPLATFORM
+
+# Copy the appropriate binary based on architecture
+COPY build/lazy-rabbit-secretary-linux-${TARGETARCH}-static ./lazy-rabbit-secretary
 
 # Copy config files
 COPY config ./config

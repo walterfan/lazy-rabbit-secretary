@@ -73,6 +73,11 @@ func initRedis(logger *zap.Logger) *redis.Client {
 	redisPort := os.Getenv("REDIS_PORT")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 
+	if redisHost == "" || redisPort == "" {
+		logger.Warn("REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD not set")
+		return nil
+	}
+
 	// Initialize the Redis client
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),

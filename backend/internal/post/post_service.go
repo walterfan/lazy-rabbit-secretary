@@ -72,6 +72,33 @@ type UpdatePostRequest struct {
 	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
+// RefineRequest represents the request to refine a post
+type RefineRequest struct {
+	Title           string                 `json:"title" validate:"min=1,max=200"`
+	Slug            string                 `json:"slug" validate:"max=200"`
+	Content         string                 `json:"content" validate:"min=1"`
+	Excerpt         string                 `json:"excerpt" validate:"max=500"`
+	Status          models.PostStatus      `json:"status" validate:"oneof=draft pending published private scheduled"`
+	Type            models.PostType        `json:"type" validate:"oneof=post page attachment revision custom"`
+	Format          models.PostFormat      `json:"format" validate:"oneof=standard aside gallery link image quote status video audio chat"`
+	Password        string                 `json:"password,omitempty" validate:"max=100"`
+	MetaTitle       string                 `json:"meta_title" validate:"max=200"`
+	MetaDescription string                 `json:"meta_description" validate:"max=500"`
+	MetaKeywords    string                 `json:"meta_keywords" validate:"max=200"`
+	FeaturedImage   string                 `json:"featured_image" validate:"url"`
+	Categories      []string               `json:"categories"`
+	Tags            []string               `json:"tags"`
+	ParentID        string                 `json:"parent_id,omitempty"`
+	MenuOrder       int                    `json:"menu_order"`
+	IsSticky        bool                   `json:"is_sticky"`
+	AllowPings      bool                   `json:"allow_pings"`
+	CommentStatus   string                 `json:"comment_status" validate:"oneof=open closed registration_required"`
+	ScheduledFor    *time.Time             `json:"scheduled_for,omitempty"`
+	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
+	Action          string                 `json:"action" binding:"required" validate:"required,oneof=improve_writing make_shorter make_longer change_tone translate"`
+	Requirement     string                 `json:"requirement,omitempty" validate:"max=1000"`
+}
+
 // PostResponse represents the response for post operations
 type PostResponse struct {
 	ID              string                 `json:"id"`
@@ -302,6 +329,66 @@ func (s *PostService) UpdateFromInput(id string, req *UpdatePostRequest, updated
 			return nil, fmt.Errorf("failed to serialize custom fields: %w", err)
 		}
 		post.CustomFields = customFieldsJSON
+	}
+
+	post.UpdatedBy = updatedBy
+	post.UpdatedAt = time.Now()
+
+	// Save changes
+	if err := s.repo.Update(post); err != nil {
+		return nil, fmt.Errorf("failed to update post: %w", err)
+	}
+
+	return s.toResponse(post), nil
+}
+
+// RefinePost refines a post based on the specified action
+func (s *PostService) RefinePost(id string, req *RefineRequest, updatedBy string) (*PostResponse, error) {
+	// Validate request
+	if err := s.validateRefineRequest(req); err != nil {
+		return nil, fmt.Errorf("validation failed: %w", err)
+	}
+
+	// Get existing post
+	post, err := s.repo.GetByID(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("post not found")
+		}
+		return nil, fmt.Errorf("failed to get post: %w", err)
+	}
+
+	// Apply refinement based on action
+	switch req.Action {
+	case "improve_writing":
+		post.Content = s.improveWriting(post.Content, req.Requirement)
+	case "make_shorter":
+		post.Content = s.makeShorter(post.Content, req.Requirement)
+	case "make_longer":
+		post.Content = s.makeLonger(post.Content, req.Requirement)
+	case "change_tone":
+		post.Content = s.changeTone(post.Content, req.Requirement)
+	case "translate":
+		post.Content = s.translateContent(post.Content, req.Requirement)
+	default:
+		return nil, fmt.Errorf("unsupported action: %s", req.Action)
+	}
+
+	// Update other fields if provided
+	if req.Title != "" {
+		post.Title = req.Title
+	}
+	if req.Excerpt != "" {
+		post.Excerpt = req.Excerpt
+	}
+	if req.MetaTitle != "" {
+		post.MetaTitle = req.MetaTitle
+	}
+	if req.MetaDescription != "" {
+		post.MetaDescription = req.MetaDescription
+	}
+	if req.MetaKeywords != "" {
+		post.MetaKeywords = req.MetaKeywords
 	}
 
 	post.UpdatedBy = updatedBy
@@ -562,6 +649,87 @@ func (s *PostService) validateUpdateRequest(req *UpdatePostRequest) error {
 		return fmt.Errorf("content cannot be empty")
 	}
 	return nil
+}
+
+func (s *PostService) validateRefineRequest(req *RefineRequest) error {
+	if req.Action == "" {
+		return fmt.Errorf("action is required")
+	}
+
+	// Validate action values
+	validActions := []string{"improve_writing", "make_shorter", "make_longer", "change_tone", "translate"}
+	validAction := false
+	for _, action := range validActions {
+		if req.Action == action {
+			validAction = true
+			break
+		}
+	}
+	if !validAction {
+		return fmt.Errorf("invalid action: %s", req.Action)
+	}
+
+	// Validate requirement for specific actions
+	if req.Action == "change_tone" && req.Requirement != "" {
+		validTones := []string{"formal", "informal", "friendly", "persuasive", "serious"}
+		validTone := false
+		for _, tone := range validTones {
+			if req.Requirement == tone {
+				validTone = true
+				break
+			}
+		}
+		if !validTone {
+			return fmt.Errorf("invalid tone: %s. Valid tones are: formal, informal, friendly, persuasive, serious", req.Requirement)
+		}
+	}
+
+	if req.Action == "translate" && req.Requirement != "" {
+		validLanguages := []string{"chinese", "english", "japanese", "spanish", "french", "german", "italian", "portuguese", "russian", "korean"}
+		validLanguage := false
+		for _, lang := range validLanguages {
+			if req.Requirement == lang {
+				validLanguage = true
+				break
+			}
+		}
+		if !validLanguage {
+			return fmt.Errorf("invalid language: %s. Valid languages are: chinese, english, japanese, spanish, french, german, italian, portuguese, russian, korean", req.Requirement)
+		}
+	}
+
+	return nil
+}
+
+// Refinement helper methods
+func (s *PostService) improveWriting(content, requirement string) string {
+	// This is a placeholder implementation
+	// In a real application, you would integrate with an AI service like OpenAI
+	return fmt.Sprintf("[IMPROVED] %s", content)
+}
+
+func (s *PostService) makeShorter(content, requirement string) string {
+	// This is a placeholder implementation
+	// In a real application, you would integrate with an AI service
+	return fmt.Sprintf("[SHORTENED] %s", content)
+}
+
+func (s *PostService) makeLonger(content, requirement string) string {
+	// This is a placeholder implementation
+	// In a real application, you would integrate with an AI service
+	return fmt.Sprintf("[LENGTHENED] %s", content)
+}
+
+func (s *PostService) changeTone(content, requirement string) string {
+	// This is a placeholder implementation
+	// In a real application, you would integrate with an AI service
+	return fmt.Sprintf("[%s TONE] %s", strings.ToUpper(requirement), content)
+}
+
+func (s *PostService) translateContent(content, requirement string) string {
+	// This is a placeholder implementation
+	// In a real application, you would integrate with a translation service
+	return fmt.Sprintf("[TRANSLATED TO %s] %s", strings.ToUpper(requirement), content)
 }
 
 func (s *PostService) generateSlugFromTitle(title string) string {
