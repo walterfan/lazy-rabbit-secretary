@@ -13,7 +13,13 @@ ARCH := amd64 arm64
 BUILD_DIR := build
 
 # Default target
-all: build-all
+all: build-default
+
+# Build for current platform (default Go settings)
+build-default:
+	@echo "Building the project for current platform (default Go settings)..."
+	@CGO_ENABLED=1 $(GO) build $(GOFLAGS) -o $(BINARY_NAME) main.go
+	@echo "Build complete."
 
 # Build for current platform
 build:
@@ -121,6 +127,7 @@ list-binaries:
 # Help
 help:
 	@echo "Available commands:"
+	@echo "  make build-default - Build for current platform (default Go settings, CGO_ENABLED=1)"
 	@echo "  make build         - Build for current platform"
 	@echo "  make build-all     - Build for all platforms (linux, darwin, windows)"
 	@echo "  make build-linux   - Build for Linux (amd64, arm64)"
