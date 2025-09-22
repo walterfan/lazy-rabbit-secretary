@@ -21,7 +21,7 @@ static_routes:
     - path: "/web"
       dir: "../frontend/dist"
   private:
-    - path: "/diary"
+    - path: "/doc"
       dir: "../doc/build/html"
 commands:
   - name: "make_calendar"

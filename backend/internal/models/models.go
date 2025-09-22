@@ -116,6 +116,10 @@ func GetAllModels() []interface{} {
 		&PostCategoryRelation{},
 		&PostTagRelation{},
 		&Comment{},
+
+		// Wiki System
+		&WikiPage{},
+		&WikiRevision{},
 	}
 }
 
@@ -154,4 +158,8 @@ type DatabaseModels struct {
 	PostCategoryRelations []PostCategoryRelation
 	PostTagRelations      []PostTagRelation
 	Comments              []Comment
+
+	// Wiki System
+	WikiPages     []WikiPage
+	WikiRevisions []WikiRevision
 }

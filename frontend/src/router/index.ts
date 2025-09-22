@@ -13,6 +13,9 @@ import EncodingToolsView from '@/views/EncodingToolsView.vue';
 import PromptsView from '@/views/PromptsView.vue';
 import ProfileView from '@/views/ProfileView.vue';
 import GTDView from '@/views/GTDView.vue';
+import WikiView from '@/views/WikiView.vue';
+import WikiPageView from '@/views/WikiPageView.vue';
+import WikiEditView from '@/views/WikiEditView.vue';
 import SignInView from '@/views/SignInView.vue';
 import SignUpView from '@/views/SignUpView.vue';
 import UserManagementView from '@/views/admin/UserManagementView.vue';
@@ -66,6 +69,26 @@ const router = createRouter({
       path: '/gtd',
       name: 'gtd',
       component: GTDView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/wiki',
+      name: 'wiki',
+      component: WikiView,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/wiki/page/:slug',
+      name: 'wiki-page',
+      component: WikiPageView,
+      props: true,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/wiki/edit/:slug?',
+      name: 'wiki-edit',
+      component: WikiEditView,
+      props: true,
       meta: { requiresAuth: true }
     },
     {

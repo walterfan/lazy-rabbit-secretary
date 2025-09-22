@@ -52,6 +52,11 @@
               <i class="bi bi-journal-text"></i> {{ $t('nav.blog') }}
             </router-link>
           </li>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/wiki">
+              <i class="bi bi-book"></i> {{ $t('nav.wiki') }}
+            </router-link>
+          </li>
           <li class="nav-item dropdown" v-if="isAuthenticated">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-tools"></i> {{ $t('nav.tools') }}

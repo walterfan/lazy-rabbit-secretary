@@ -386,7 +386,9 @@ export const usePostStore = defineStore('post', () => {
         type,
       })
       
-      const response = await fetch(getApiUrl(`/posts/published?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/published?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch published posts: ${response.statusText}`)
@@ -408,7 +410,9 @@ export const usePostStore = defineStore('post', () => {
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl(`/posts/published/${slug}`))
+      const response = await fetch(getApiUrl(`/posts/published/${slug}`), {
+        headers: getHeaders()
+      })
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -438,7 +442,9 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/category/${category}?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/category/${category}?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch posts by category: ${response.statusText}`)
@@ -465,7 +471,9 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/tag/${tag}?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/tag/${tag}?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch posts by tag: ${response.statusText}`)
@@ -493,7 +501,9 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/search?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/search?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to search posts: ${response.statusText}`)
@@ -518,7 +528,9 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/popular?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/popular?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (response.ok) {
         const data = await response.json()
@@ -536,7 +548,9 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/recent?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/recent?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (response.ok) {
         const data = await response.json()
@@ -553,7 +567,9 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/sticky?${params.toString()}`))
+      const response = await fetch(getApiUrl(`/posts/sticky?${params.toString()}`), {
+        headers: getHeaders()
+      })
       
       if (response.ok) {
         const data = await response.json()

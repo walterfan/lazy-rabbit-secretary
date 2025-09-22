@@ -26,8 +26,9 @@ func NewPostRoutes(db *gorm.DB) *PostRoutes {
 
 // RegisterRoutes registers post routes with the router
 func RegisterRoutes(router *gin.Engine, service *PostService, middleware *auth.AuthMiddleware) {
-	// Public routes (no authentication required)
+	// Public routes (optional authentication - check auth header if present)
 	publicGroup := router.Group("/api/v1/posts")
+	publicGroup.Use(middleware.OptionalAuth())
 	{
 		publicGroup.GET("/published", listPublishedPosts(service))
 		publicGroup.GET("/published/:slug", getPublishedPostBySlug(service))
@@ -70,6 +71,9 @@ func listPublishedPosts(service *PostService) gin.HandlerFunc {
 		// Get realm ID (could be from subdomain, header, or default)
 		realmID := getRealmID(c)
 
+		// Check if user is authenticated
+		userID, isAuthenticated := auth.GetCurrentUser(c)
+
 		result, err := service.ListPublished(realmID, postType, page, limit)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -78,7 +82,22 @@ func listPublishedPosts(service *PostService) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		// Add authentication status to response
+		response := gin.H{
+			"posts":         result.Posts,
+			"total":         result.Total,
+			"page":          result.Page,
+			"limit":         result.Limit,
+			"authenticated": isAuthenticated,
+		}
+
+		// Add user info if authenticated
+		if isAuthenticated {
+			response["user_id"] = userID
+			// Could add additional user-specific data here
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
 }
 
@@ -116,7 +135,22 @@ func getPublishedPostBySlug(service *PostService) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, post)
+		// Check if user is authenticated
+		userID, isAuthenticated := auth.GetCurrentUser(c)
+
+		// Add authentication status to response
+		response := gin.H{
+			"post":          post,
+			"authenticated": isAuthenticated,
+		}
+
+		// Add user info if authenticated
+		if isAuthenticated {
+			response["user_id"] = userID
+			// Could add additional user-specific data here (e.g., user's reading history, bookmarks, etc.)
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
 }
 
@@ -142,7 +176,25 @@ func getPostsByCategory(service *PostService) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		// Check if user is authenticated
+		userID, isAuthenticated := auth.GetCurrentUser(c)
+
+		// Add authentication status to response
+		response := gin.H{
+			"posts":         result.Posts,
+			"total":         result.Total,
+			"page":          result.Page,
+			"limit":         result.Limit,
+			"category":      category,
+			"authenticated": isAuthenticated,
+		}
+
+		// Add user info if authenticated
+		if isAuthenticated {
+			response["user_id"] = userID
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
 }
 
@@ -195,7 +247,26 @@ func searchPublishedPosts(service *PostService) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		// Check if user is authenticated
+		userID, isAuthenticated := auth.GetCurrentUser(c)
+
+		// Add authentication status to response
+		response := gin.H{
+			"posts":         result.Posts,
+			"total":         result.Total,
+			"page":          result.Page,
+			"limit":         result.Limit,
+			"query":         query,
+			"authenticated": isAuthenticated,
+		}
+
+		// Add user info if authenticated
+		if isAuthenticated {
+			response["user_id"] = userID
+			// Could add search history or personalized results here
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
 }
 

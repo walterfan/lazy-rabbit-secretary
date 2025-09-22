@@ -27,6 +27,7 @@ import (
 	"github.com/walterfan/lazy-rabbit-secretary/internal/reminder"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/secret"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/task"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/wiki"
 	"github.com/walterfan/lazy-rabbit-secretary/pkg/database"
 	"github.com/walterfan/lazy-rabbit-secretary/pkg/metrics"
 )
@@ -213,6 +214,10 @@ func (thiz *WebApiService) Run() {
 	// Register post routes
 	postService := post.NewPostService(database.GetDB())
 	post.RegisterRoutes(r, postService, authMiddleware)
+
+	// Register wiki routes
+	wikiService := wiki.NewWikiService(database.GetDB())
+	wiki.RegisterRoutes(r, wikiService, authMiddleware)
 
 	// Register GTD system routes
 	inboxService := inbox.NewInboxService(database.GetDB())

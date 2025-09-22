@@ -353,6 +353,22 @@ import { useVuelidate } from '@vuelidate/core';
 import type { Task } from '@/types';
 import { useTaskValidation } from './useTaskValidation';
 import { parseISO, addDays, addHours, startOfDay, setHours, setMinutes } from 'date-fns';
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore();
+
+// Helper function to get headers with optional authentication
+const getHeaders = () => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (authStore.token) {
+    headers.Authorization = `Bearer ${authStore.token}`;
+  }
+  
+  return headers;
+};
 
 const props = defineProps<{
   task?: Task;
@@ -468,9 +484,7 @@ const parseNaturalLanguage = async () => {
     // First, try to call the backend LLM API for parsing
     const response = await fetch('/api/v1/tasks/parse', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify({ text: originalInput })
     });
     

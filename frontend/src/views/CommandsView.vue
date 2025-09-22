@@ -164,6 +164,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore();
+
+// Helper function to get headers with optional authentication
+const getHeaders = () => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (authStore.token) {
+    headers.Authorization = `Bearer ${authStore.token}`;
+  }
+  
+  return headers;
+};
 
 // Form data model
 const formData = ref({
@@ -182,7 +198,9 @@ const fetchCommands = async () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL;
 
   try {
-    const response = await fetch(`${apiBase}/api/v1/commands`);
+    const response = await fetch(`${apiBase}/api/v1/commands`, {
+      headers: getHeaders()
+    });
     const data = await response.json();
     commands.value = data.commands || [];
   } catch (error) {
@@ -212,9 +230,7 @@ const handleSubmit = async () => {
   try {
     const response = await fetch(`${apiBase}/api/v1/commands`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: getHeaders(),
       body: JSON.stringify(formData.value)
     });
 

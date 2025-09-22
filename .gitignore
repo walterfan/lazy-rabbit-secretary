@@ -1,4 +1,6 @@
 lazy-rabbit-secretary
+lazy-rabbit-secretary.db
+lazy-rabbit-secretary.log
 walter-*
 *.db
 data/

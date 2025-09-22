@@ -237,3 +237,96 @@ export interface PostListResponse {
   page: number;
   limit: number;
 }
+
+// Wiki Types
+export interface WikiPage {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  summary: string;
+  status: 'draft' | 'published' | 'archived' | 'protected';
+  type: 'article' | 'template' | 'category' | 'redirect' | 'stub';
+  is_protected: boolean;
+  is_locked: boolean;
+  categories: string[];
+  tags: string[];
+  parent_id?: string;
+  redirect_to?: string;
+  view_count: number;
+  edit_count: number;
+  current_version: number;
+  language: string;
+  translation_of?: string;
+  created_by: string;
+  created_at: string;
+  updated_by: string;
+  updated_at: string;
+  authenticated?: boolean;
+  user_id?: string;
+  can_edit?: boolean;
+  can_delete?: boolean;
+}
+
+export interface WikiRevision {
+  id: string;
+  page_id: string;
+  version: number;
+  title: string;
+  content: string;
+  summary: string;
+  change_note: string;
+  content_size: number;
+  line_count: number;
+  created_by: string;
+  created_at: string;
+}
+
+export interface CreateWikiPageRequest {
+  realm_id?: string;
+  title: string;
+  slug?: string;
+  content: string;
+  summary?: string;
+  status?: 'draft' | 'published' | 'archived' | 'protected';
+  type?: 'article' | 'template' | 'category' | 'redirect' | 'stub';
+  is_protected?: boolean;
+  categories?: string[];
+  tags?: string[];
+  parent_id?: string;
+  redirect_to?: string;
+  language?: string;
+  change_note?: string;
+}
+
+export interface UpdateWikiPageRequest {
+  title?: string;
+  slug?: string;
+  content?: string;
+  summary?: string;
+  status?: 'draft' | 'published' | 'archived' | 'protected';
+  type?: 'article' | 'template' | 'category' | 'redirect' | 'stub';
+  is_protected?: boolean;
+  categories?: string[];
+  tags?: string[];
+  parent_id?: string;
+  redirect_to?: string;
+  language?: string;
+  change_note?: string;
+}
+
+export interface WikiPageListResponse {
+  pages: WikiPage[];
+  total: number;
+  page: number;
+  limit: number;
+  authenticated?: boolean;
+  user_id?: string;
+}
+
+export interface WikiRevisionListResponse {
+  revisions: WikiRevision[];
+  total: number;
+  page: number;
+  limit: number;
+}

@@ -87,6 +87,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore();
+
+// Helper function to get headers with optional authentication
+const getHeaders = () => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (authStore.token) {
+    headers.Authorization = `Bearer ${authStore.token}`;
+  }
+  
+  return headers;
+};
 
 // News prompt from API
 const newsPrompt = ref<string | null>(null);
@@ -102,7 +118,9 @@ const fetchNewsPrompt = async () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL;
 
   try {
-    const response = await fetch(`${apiBase}/news`);
+    const response = await fetch(`${apiBase}/news`, {
+      headers: getHeaders()
+    });
     const data = await response.json();
     newsPrompt.value = data.message || 'Welcome to Lazy Rabbit Secretary! Your AI-powered productivity companion is ready to help you achieve more with less effort.';
   } catch (error) {

@@ -2,10 +2,42 @@
  * Utility functions for handling HTTP errors with detailed messages
  */
 
+import { useAuthStore } from '@/stores/authStore';
+
 export interface ApiError {
   message: string;
   status: number;
   details?: string;
+}
+
+/**
+ * Handle 401 Unauthorized errors by redirecting to home page
+ */
+export function handleUnauthorized(): void {
+  const authStore = useAuthStore();
+  
+  // Clear auth state
+  authStore.signOut();
+  
+  // Redirect to home page
+  if (window.location.pathname !== '/') {
+    window.location.href = '/';
+  }
+}
+
+/**
+ * Enhanced fetch function that automatically handles 401 errors
+ * Use this for direct API calls that need 401 handling
+ */
+export async function fetchWith401Handling(url: string, options: RequestInit = {}): Promise<Response> {
+  const response = await fetch(url, options);
+  
+  // If 401, handle it and return the response
+  if (response.status === 401) {
+    handleUnauthorized();
+  }
+  
+  return response;
 }
 
 /**
@@ -27,7 +59,9 @@ export async function handleHttpError(response: Response): Promise<ApiError> {
   // Add specific messages based on status codes
   switch (response.status) {
     case 401:
-      errorMessage = 'Authentication failed. Please log in again.';
+      // Handle 401 by redirecting to home page
+      handleUnauthorized();
+      errorMessage = 'Authentication failed. Redirecting to home page.';
       errorDetails = errorDetails || 'Your session may have expired or the token is invalid.';
       break;
     case 403:

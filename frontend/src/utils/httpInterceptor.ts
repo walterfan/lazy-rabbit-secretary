@@ -6,6 +6,7 @@
 
 import { useAuthStore } from '@/stores/authStore';
 import { isTokenExpiringSoon, isTokenExpired } from '@/utils/jwtUtils';
+import { handleUnauthorized } from '@/utils/errorHandler';
 
 interface RequestConfig {
   url: string;
@@ -89,7 +90,7 @@ class HttpInterceptor {
       const tokenValid = await this.ensureValidToken();
       if (!tokenValid) {
         console.error('Failed to obtain valid token');
-        this.redirectToLogin();
+        handleUnauthorized();
         throw new Error('Authentication failed. Please log in again.');
       }
     }
@@ -151,31 +152,18 @@ class HttpInterceptor {
         this.processQueue(null);
         return this.makeRequest(originalConfig);
       } else {
-        // Refresh failed, redirect to login
+        // Refresh failed, redirect to home page
         this.processQueue(new Error('Token refresh failed'));
-        this.redirectToLogin();
+        handleUnauthorized();
         throw new Error('Authentication failed. Please log in again.');
       }
     } catch (error) {
       // Refresh failed, process queue with error
       this.processQueue(error);
-      this.redirectToLogin();
+      handleUnauthorized();
       throw error;
     } finally {
       this.isRefreshing = false;
-    }
-  }
-
-  /**
-   * Redirect to login page
-   */
-  private redirectToLogin() {
-    // Clear auth state
-    this.getAuthStore().signOut();
-    
-    // Redirect to login page
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
     }
   }
 
