@@ -65,23 +65,43 @@ note right of App
 end note
 @enduml
 */
-// Secret stores encrypted secrets scoped by realm
+
+
 type Secret struct {
-	ID         string         `json:"id" gorm:"primaryKey;type:text"`
-	RealmID    string         `json:"realm_id" gorm:"not null;type:text;index;uniqueIndex:uq_credential_realm_name"`
-	Name       string         `json:"name" gorm:"not null;type:text;uniqueIndex:uq_credential_realm_name"`
-	Group      string         `json:"group" gorm:"not null;type:text"`
-	Desc       string         `json:"desc" gorm:"not null;type:text"`
-	Path       string         `json:"path" gorm:"not null;type:text"`
-	CipherAlg  string         `json:"cipher_alg" gorm:"not null;type:text"`
-	CipherText string         `json:"cipher_text" gorm:"not null;type:text"`
-	Nonce      string         `json:"nonce" gorm:"not null;type:text"`
-	AuthTag    string         `json:"auth_tag" gorm:"not null;type:text"`
-	WrappedDEK string         `json:"wrapped_dek" gorm:"not null;type:text"`
-	KEKVersion int            `json:"kek_version" gorm:"not null"`
-	CreatedBy  string         `json:"created_by" gorm:"type:text"`
-	CreatedAt  time.Time      `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedBy  string         `json:"updated_by" gorm:"type:text"`
-	UpdatedAt  time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+    ID              string         `json:"id" gorm:"primaryKey;type:text"`
+    RealmID         string         `json:"realm_id" gorm:"not null;type:text;index;uniqueIndex:uq_realm_name"`
+    Name            string         `json:"name" gorm:"not null;type:text;uniqueIndex:uq_realm_name"`
+    Group           string         `json:"group" gorm:"not null;type:text"`
+    Desc            string         `json:"desc" gorm:"not null;type:text"`
+    Path            string         `json:"path" gorm:"not null;type:text"`
+
+    // --- Version pointers ---
+    CurrentVersion  int            `json:"current_version" gorm:"not null;default:0"`
+    PreviousVersion int            `json:"previous_version" gorm:"not null;default:0"`
+    PendingVersion  int            `json:"pending_version" gorm:"not null;default:0"`
+    MaxVersion      int            `json:"max_version" gorm:"not null;default:0"`
+
+    CreatedBy       string         `json:"created_by" gorm:"type:text"`
+    CreatedAt       time.Time      `json:"created_at" gorm:"autoCreateTime"`
+    UpdatedBy       string         `json:"updated_by" gorm:"type:text"`
+    UpdatedAt       time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+    DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+
+
+type SecretVersion struct {
+    ID         string         `json:"id" gorm:"primaryKey;type:text"`
+    SecretID   string         `json:"secret_id" gorm:"not null;type:text;index"`
+    Version    int            `json:"version" gorm:"not null;index"` // secret version
+    CipherAlg  string         `json:"cipher_alg" gorm:"not null;type:text"`
+    CipherText string         `json:"cipher_text" gorm:"not null;type:text"`
+    Nonce      string         `json:"nonce" gorm:"not null;type:text"`
+    AuthTag    string         `json:"auth_tag" gorm:"not null;type:text"`
+    WrappedDEK string         `json:"wrapped_dek" gorm:"not null;type:text"`
+    KEKVersion int            `json:"kek_version" gorm:"not null"`
+    Status     string         `json:"status" gorm:"not null;type:text"` // e.g. active, deprecated, pending
+    CreatedBy  string         `json:"created_by" gorm:"type:text"`
+    CreatedAt  time.Time      `json:"created_at" gorm:"autoCreateTime"`
+    DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }

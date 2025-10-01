@@ -118,6 +118,102 @@ func RegisterRoutes(router *gin.Engine, service *SecretService, middleware *auth
 		}
 		c.JSON(http.StatusOK, gin.H{"value": value})
 	})
+
+	// Version management endpoints
+	group.GET("/:id/versions", func(c *gin.Context) {
+		id := c.Param("id")
+		versions, err := service.GetSecretVersions(id)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"versions": versions})
+	})
+
+	group.POST("/:id/versions/:version/decrypt", func(c *gin.Context) {
+		id := c.Param("id")
+		version := parseIntDefault(c.Param("version"), 0)
+		if version <= 0 {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid version number"})
+			return
+		}
+		value, err := service.DecryptSecretVersion(id, version)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"value": value})
+	})
+
+	group.POST("/:id/versions/:version/decrypt-with-kek", func(c *gin.Context) {
+		id := c.Param("id")
+		version := parseIntDefault(c.Param("version"), 0)
+		if version <= 0 {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid version number"})
+			return
+		}
+		var req struct {
+			KEK string `json:"kek" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		value, err := service.DecryptSecretVersionWithKEK(id, version, req.KEK)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"value": value})
+	})
+
+	group.POST("/:id/versions/:version/activate", func(c *gin.Context) {
+		id := c.Param("id")
+		version := parseIntDefault(c.Param("version"), 0)
+		if version <= 0 {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid version number"})
+			return
+		}
+		updater, _ := auth.GetCurrentUsername(c)
+		if err := service.ActivateSecretVersion(id, version, updater); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(http.StatusOK)
+	})
+
+	group.DELETE("/:id/versions/:version", func(c *gin.Context) {
+		id := c.Param("id")
+		version := parseIntDefault(c.Param("version"), 0)
+		if version <= 0 {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid version number"})
+			return
+		}
+		if err := service.DeleteSecretVersion(id, version); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
+	group.POST("/:id/versions/pending", func(c *gin.Context) {
+		id := c.Param("id")
+		var req struct {
+			Value string `json:"value" binding:"required"`
+			KEK   string `json:"kek"` // Optional custom KEK
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		creator, _ := auth.GetCurrentUsername(c)
+		version, err := service.CreatePendingVersion(id, req.Value, req.KEK, creator)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusCreated, version)
+	})
 }
 
 func parseIntDefault(value string, defaultVal int) int {

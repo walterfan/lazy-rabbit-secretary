@@ -27,8 +27,17 @@
             <div class="overview-icon mb-3">
               <i class="fas fa-clock text-danger"></i>
             </div>
-            <h6>🍅 Pomodoro Timer</h6>
-            <p class="text-muted small">Focus with time-boxed work sessions</p>
+            <h6>📚 Knowledge Base</h6>
+            <p class="text-muted small">Knowledge base to release your brain</p>
+            <div v-if="authStore.isAuthenticated" class="mt-2">
+              <router-link
+                to="/wiki/page/home"
+                class="btn btn-outline-primary btn-sm"
+              >
+                <i class="bi bi-house me-1"></i>
+                Go to Wiki Home
+              </router-link>
+            </div>
           </div>
         </div>
 
@@ -37,18 +46,17 @@
             <div class="overview-icon mb-3">
               <i class="fas fa-list-check text-success"></i>
             </div>
-            <h6>✅ Smart Tasks</h6>
-            <p class="text-muted small">AI-powered task management</p>
-          </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-          <div class="overview-card text-center">
-            <div class="overview-icon mb-3">
-              <i class="fas fa-bell text-warning"></i>
+            <h6>✅ Get Things Done</h6>
+            <p class="text-muted small">Manage your time effectively</p>
+            <div v-if="authStore.isAuthenticated" class="mt-2">
+              <router-link 
+                to="/gtd" 
+                class="btn btn-outline-success btn-sm"
+              >
+                <i class="bi bi-check2-square me-1"></i>
+                Go to GTD
+              </router-link>
             </div>
-            <h6>🔔 Smart Reminders</h6>
-            <p class="text-muted small">Never miss important tasks</p>
           </div>
         </div>
 
@@ -59,8 +67,38 @@
             </div>
             <h6>🤖 AI Assistant</h6>
             <p class="text-muted small">Your personal productivity coach</p>
+            <div v-if="authStore.isAuthenticated" class="mt-2">
+              <router-link 
+                to="/ai-assistant" 
+                class="btn btn-outline-info btn-sm"
+              >
+                <i class="bi bi-robot me-1"></i>
+                Go to AI Assistant
+              </router-link>
+            </div>
           </div>
         </div>
+
+        <div class="col-lg-3 col-md-6">
+          <div class="overview-card text-center">
+            <div class="overview-icon mb-3">
+              <i class="fas fa-bell text-warning"></i>
+            </div>
+            <h6>📦 Secrets Management</h6>
+            <p class="text-muted small">Keep your sensitive data safe</p>
+            <div v-if="authStore.isAuthenticated" class="mt-2">
+              <router-link 
+                to="/secrets" 
+                class="btn btn-outline-warning btn-sm"
+              >
+                <i class="bi bi-shield-lock me-1"></i>
+                Go to Secrets
+              </router-link>
+            </div>
+          </div>
+        </div>
+
+
       </div>
     </div>
 
@@ -118,7 +156,7 @@ const fetchNewsPrompt = async () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL;
 
   try {
-    const response = await fetch(`${apiBase}/news`, {
+    const response = await fetch(`${apiBase}/api/v1/news`, {
       headers: getHeaders()
     });
     const data = await response.json();

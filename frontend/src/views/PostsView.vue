@@ -14,13 +14,6 @@
           <i class="bi bi-plus-lg"></i>
           New Post
         </button>
-        <button 
-          class="btn btn-outline-secondary"
-          @click="showCreatePageModal = true"
-        >
-          <i class="bi bi-file-earmark-plus"></i>
-          New Page
-        </button>
       </div>
     </div>
 
@@ -340,12 +333,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePostStore, type Post } from '@/stores/postStore'
 import PostFormModal from '@/components/posts/PostFormModal.vue'
 
 // Store
 const postStore = usePostStore()
+const route = useRoute()
+const router = useRouter()
 
 // Reactive state
 const searchQuery = ref('')
@@ -358,9 +354,41 @@ const showDeleteModal = ref(false)
 const editingPost = ref<Post | null>(null)
 const deletingPost = ref<Post | null>(null)
 
+// Methods
+const loadPostForEdit = async (postId: string) => {
+  try {
+    const post = await postStore.fetchPostById(postId)
+    if (post) {
+      editingPost.value = post
+      showEditModal.value = true
+    } else {
+      console.error('Post not found for editing:', postId)
+    }
+  } catch (error) {
+    console.error('Failed to load post for editing:', error)
+  }
+}
+
+// Watchers
+watch(
+  () => route.query.edit,
+  async (editId) => {
+    if (editId && typeof editId === 'string') {
+      await loadPostForEdit(editId)
+    }
+  },
+  { immediate: true }
+)
+
 // Lifecycle
-onMounted(() => {
-  refreshPosts()
+onMounted(async () => {
+  await refreshPosts()
+  
+  // Check for edit parameter on mount
+  const editId = route.query.edit as string
+  if (editId) {
+    await loadPostForEdit(editId)
+  }
 })
 
 // Methods
@@ -451,6 +479,11 @@ const closeModals = () => {
   showCreatePageModal.value = false
   showEditModal.value = false
   editingPost.value = null
+  
+  // Clear edit query parameter when closing modal
+  if (route.query.edit) {
+    router.replace({ query: { ...route.query, edit: undefined } })
+  }
 }
 
 const handlePostSaved = async () => {

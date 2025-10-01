@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './authStore'
+import { getApiUrl } from '@/utils/apiConfig'
 
 // Types
 export interface Post {
@@ -91,12 +92,6 @@ export const usePostStore = defineStore('post', () => {
   const hasPosts = computed(() => posts.value.length > 0)
   const hasPublishedPosts = computed(() => publishedPosts.value.length > 0)
 
-  // Helper function to get API base URL
-  const getApiUrl = (endpoint: string) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-    return `${baseUrl}/api/v1${endpoint}`
-  }
-
   // Helper function to get headers
   const getHeaders = () => {
     const headers: Record<string, string> = {
@@ -125,7 +120,7 @@ export const usePostStore = defineStore('post', () => {
       if (type) params.append('type', type)
       
       const response = await fetch(
-        getApiUrl(`/admin/posts?${params.toString()}`),
+        getApiUrl(`/api/v1/admin/posts?${params.toString()}`),
         {
           headers: getHeaders(),
         }
@@ -161,7 +156,7 @@ export const usePostStore = defineStore('post', () => {
       if (type) params.append('type', type)
       
       const response = await fetch(
-        getApiUrl(`/admin/posts/search?${params.toString()}`),
+        getApiUrl(`/api/v1/admin/posts/search?${params.toString()}`),
         {
           headers: getHeaders(),
         }
@@ -188,7 +183,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl(`/admin/posts/${id}`),
+        getApiUrl(`/api/v1/admin/posts/${id}`),
         {
           headers: getHeaders(),
         }
@@ -212,7 +207,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl('/admin/posts'),
+        getApiUrl('/api/v1/admin/posts'),
         {
           method: 'POST',
           headers: getHeaders(),
@@ -243,7 +238,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl(`/admin/posts/${id}`),
+        getApiUrl(`/api/v1/admin/posts/${id}`),
         {
           method: 'PUT',
           headers: getHeaders(),
@@ -279,7 +274,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl(`/admin/posts/${id}`),
+        getApiUrl(`/api/v1/admin/posts/${id}`),
         {
           method: 'DELETE',
           headers: getHeaders(),
@@ -309,7 +304,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl(`/admin/posts/${id}/publish`),
+        getApiUrl(`/api/v1/admin/posts/${id}/publish`),
         {
           method: 'POST',
           headers: getHeaders(),
@@ -344,7 +339,7 @@ export const usePostStore = defineStore('post', () => {
     
     try {
       const response = await fetch(
-        getApiUrl(`/admin/posts/${id}/schedule`),
+        getApiUrl(`/api/v1/admin/posts/${id}/schedule`),
         {
           method: 'POST',
           headers: getHeaders(),
@@ -374,6 +369,47 @@ export const usePostStore = defineStore('post', () => {
     }
   }
 
+  const refinePost = async (id: string, refineData: any): Promise<Post> => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await fetch(
+        getApiUrl(`/api/v1/admin/posts/${id}/refine`),
+        {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(refineData),
+        }
+      )
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Failed to refine post: ${response.statusText}`)
+      }
+      
+      const refinedPost: Post = await response.json()
+      
+      // Update the post in the posts array if it exists
+      const index = posts.value.findIndex(p => p.id === id)
+      if (index !== -1) {
+        posts.value[index] = refinedPost
+      }
+      
+      // Update current post if it's the same one
+      if (currentPost.value?.id === id) {
+        currentPost.value = refinedPost
+      }
+      
+      return refinedPost
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to refine post'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Actions - Public API (no authentication)
   const fetchPublishedPosts = async (page = 1, type = 'post') => {
     loading.value = true
@@ -386,7 +422,7 @@ export const usePostStore = defineStore('post', () => {
         type,
       })
       
-      const response = await fetch(getApiUrl(`/posts/published?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/published?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -405,12 +441,12 @@ export const usePostStore = defineStore('post', () => {
     }
   }
 
-  const fetchPublishedPostBySlug = async (slug: string): Promise<Post | null> => {
+  const fetchPostById = async (id: string): Promise<Post | null> => {
     loading.value = true
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl(`/posts/published/${slug}`), {
+      const response = await fetch(getApiUrl(`/api/v1/admin/posts/${id}`), {
         headers: getHeaders()
       })
       
@@ -421,7 +457,36 @@ export const usePostStore = defineStore('post', () => {
         throw new Error(`Failed to fetch post: ${response.statusText}`)
       }
       
-      const post: Post = await response.json()
+      const responseData = await response.json()
+      const post: Post = responseData.post || responseData
+      currentPost.value = post
+      return post
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch post'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchPublishedPostBySlug = async (slug: string): Promise<Post | null> => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await fetch(getApiUrl(`/api/v1/posts/published/${slug}`), {
+        headers: getHeaders()
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null
+        }
+        throw new Error(`Failed to fetch post: ${response.statusText}`)
+      }
+      
+      const responseData = await response.json()
+      const post: Post = responseData.post || responseData
       currentPost.value = post
       return post
     } catch (err) {
@@ -442,7 +507,7 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/category/${category}?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/category/${category}?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -471,7 +536,7 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/tag/${tag}?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/tag/${tag}?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -501,7 +566,7 @@ export const usePostStore = defineStore('post', () => {
         limit: '10',
       })
       
-      const response = await fetch(getApiUrl(`/posts/search?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/search?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -528,7 +593,7 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/popular?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/popular?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -548,7 +613,7 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/recent?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/recent?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -567,7 +632,7 @@ export const usePostStore = defineStore('post', () => {
         type: 'post',
       })
       
-      const response = await fetch(getApiUrl(`/posts/sticky?${params.toString()}`), {
+      const response = await fetch(getApiUrl(`/api/v1/posts/sticky?${params.toString()}`), {
         headers: getHeaders()
       })
       
@@ -616,11 +681,13 @@ export const usePostStore = defineStore('post', () => {
     fetchPosts,
     searchPosts,
     fetchPost,
+    fetchPostById,
     createPost,
     updatePost,
     deletePost,
     publishPost,
     schedulePost,
+    refinePost,
     
     // Public actions
     fetchPublishedPosts,

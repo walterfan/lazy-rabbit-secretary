@@ -1,6 +1,7 @@
 server:
   port: 9090
   webroot: "../frontend/dist/index.html"
+  upload_dir: "./data/uploads"
   tls:
     cert_file: "certs/certificate.pem"
     key_file: "certs/private.pem"

@@ -60,7 +60,149 @@
 
                 <!-- Content -->
                 <div class="mb-3">
-                  <label class="form-label">Content * <small class="text-muted">(Markdown supported)</small></label>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Content * <small class="text-muted">(Markdown supported)</small></label>
+                    
+                    <!-- AI Assistant Button -->
+                    <div class="dropdown">
+                      <button
+                        class="btn btn-outline-primary btn-sm dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        :disabled="!postData.content?.trim() || aiProcessing"
+                      >
+                        <i class="bi bi-robot me-1"></i>
+                        <span v-if="aiProcessing">
+                          <span class="spinner-border spinner-border-sm me-1"></span>
+                          Processing...
+                        </span>
+                        <span v-else>AI Assist</span>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                          <h6 class="dropdown-header">
+                            <i class="bi bi-pencil-square me-1"></i>
+                            Writing Improvements
+                          </h6>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('improve-writing')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-arrow-up-circle me-2 text-success"></i>
+                            Improve Writing
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('make-shorter')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-arrow-down-circle me-2 text-info"></i>
+                            Make Shorter
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('make-longer')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-arrow-up-circle me-2 text-warning"></i>
+                            Make Longer
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <h6 class="dropdown-header">
+                            <i class="bi bi-palette me-1"></i>
+                            Change Tone
+                          </h6>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('tone-formal')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-briefcase me-2 text-secondary"></i>
+                            Formal
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('tone-informal')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-chat-heart me-2 text-primary"></i>
+                            Informal
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('tone-friendly')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-emoji-smile me-2 text-success"></i>
+                            Friendly
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('tone-persuasive')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-megaphone me-2 text-warning"></i>
+                            Persuasive
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('tone-serious')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-shield-check me-2 text-danger"></i>
+                            Serious
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <h6 class="dropdown-header">
+                            <i class="bi bi-translate me-1"></i>
+                            Translation
+                          </h6>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('translate-english')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-globe me-2 text-info"></i>
+                            Translate to English
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            class="dropdown-item" 
+                            @click="handleAiAction('translate-chinese')"
+                            :disabled="aiProcessing"
+                          >
+                            <i class="bi bi-globe2 me-2 text-info"></i>
+                            Translate to Chinese
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
                   <MarkdownEditor
                     v-model="postData.content"
                     :textarea-class="{ 'form-control': true, 'is-invalid': v$.content.$error }"
@@ -368,6 +510,7 @@ const categoriesInput = ref('')
 const tagsInput = ref('')
 const scheduledDate = ref('')
 const formErrors = ref<string[]>([])
+const aiProcessing = ref(false)
 
 // Validation rules
 const rules = {
@@ -517,6 +660,117 @@ const handleSubmit = async () => {
 const onImageError = () => {
   formErrors.value = ['Failed to load featured image. Please check the URL.']
 }
+
+// AI Assistant Methods
+const handleAiAction = async (action: string) => {
+  if (!postData.content?.trim()) {
+    alert('Please add some content first before using AI assistance.')
+    return
+  }
+
+  // Check if we're editing an existing post (need post ID for API call)
+  if (!isEditing.value || !props.post?.id) {
+    alert('Please save the post first before using AI assistance. AI refinement only works on existing posts.')
+    return
+  }
+
+  aiProcessing.value = true
+  
+  try {
+    // Map frontend action names to backend action names
+    const actionMapping: Record<string, { action: string; requirement?: string }> = {
+      'improve-writing': { action: 'improve_writing' },
+      'make-shorter': { action: 'make_shorter' },
+      'make-longer': { action: 'make_longer' },
+      'tone-formal': { action: 'change_tone', requirement: 'formal' },
+      'tone-informal': { action: 'change_tone', requirement: 'informal' },
+      'tone-friendly': { action: 'change_tone', requirement: 'friendly' },
+      'tone-persuasive': { action: 'change_tone', requirement: 'persuasive' },
+      'tone-serious': { action: 'change_tone', requirement: 'serious' },
+      'translate-english': { action: 'translate', requirement: 'english' },
+      'translate-chinese': { action: 'translate', requirement: 'chinese' }
+    }
+
+    const mappedAction = actionMapping[action]
+    if (!mappedAction) {
+      throw new Error(`Unknown action: ${action}`)
+    }
+
+    // Get action description for user feedback
+    const actionDescriptions: Record<string, string> = {
+      'improve-writing': 'improving the writing quality',
+      'make-shorter': 'making the content more concise',
+      'make-longer': 'expanding the content with more details',
+      'tone-formal': 'changing the tone to formal',
+      'tone-informal': 'changing the tone to informal',
+      'tone-friendly': 'changing the tone to friendly',
+      'tone-persuasive': 'changing the tone to persuasive',
+      'tone-serious': 'changing the tone to serious',
+      'translate-english': 'translating to English',
+      'translate-chinese': 'translating to Chinese'
+    }
+
+    const actionDescription = actionDescriptions[action] || 'processing'
+    console.log(`AI is ${actionDescription}...`)
+
+    // Prepare the refine request with current post data
+    const refineRequest = {
+      title: postData.title,
+      slug: postData.slug,
+      content: postData.content,
+      excerpt: postData.excerpt,
+      status: postData.status,
+      type: postData.type,
+      format: postData.format,
+      password: postData.password,
+      meta_title: postData.meta_title,
+      meta_description: postData.meta_description,
+      meta_keywords: postData.meta_keywords,
+      featured_image: postData.featured_image,
+      categories: postData.categories,
+      tags: postData.tags,
+      parent_id: postData.parent_id,
+      menu_order: postData.menu_order,
+      is_sticky: postData.is_sticky,
+      allow_pings: postData.allow_pings,
+      comment_status: postData.comment_status,
+      scheduled_for: postData.scheduled_for,
+      custom_fields: postData.custom_fields,
+      action: mappedAction.action,
+      requirement: mappedAction.requirement
+    }
+
+    // Call the backend API
+    const refinedPost = await postStore.refinePost(props.post.id, refineRequest)
+    
+    if (refinedPost && refinedPost.content !== postData.content) {
+      // Show confirmation dialog before applying changes
+      const confirmed = confirm(
+        `AI has finished ${actionDescription}. Would you like to replace the current content with the AI-processed version?\n\n` +
+        `Preview (first 200 characters):\n${refinedPost.content.substring(0, 200)}${refinedPost.content.length > 200 ? '...' : ''}`
+      )
+      
+      if (confirmed) {
+        // Update the form data with the refined content
+        postData.content = refinedPost.content
+        // Also update other fields that might have been refined
+        if (refinedPost.title !== postData.title) postData.title = refinedPost.title
+        if (refinedPost.excerpt !== postData.excerpt) postData.excerpt = refinedPost.excerpt
+        console.log(`Content updated with AI ${actionDescription}`)
+      }
+    } else {
+      alert('AI processing completed, but no changes were suggested.')
+    }
+    
+  } catch (error) {
+    console.error('AI processing error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    alert(`Sorry, AI processing failed: ${errorMessage}. Please try again later.`)
+  } finally {
+    aiProcessing.value = false
+  }
+}
+
 </script>
 
 <style scoped>

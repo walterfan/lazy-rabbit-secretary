@@ -4,11 +4,10 @@
     <div class="quick-add-section">
       <div class="quick-add-card">
         <div class="quick-add-header">
-          <h3>
+          <h4>
             <i class="bi bi-lightning"></i>
-            {{ $t('gtd.quickCapture') }}
-          </h3>
-          <p>{{ $t('gtd.quickCaptureDesc') }}</p>
+            {{ $t('gtd.quickCaptureDesc') }}
+          </h4>
         </div>
         <form @submit.prevent="handleQuickAdd" class="quick-add-form">
           <div class="input-group">

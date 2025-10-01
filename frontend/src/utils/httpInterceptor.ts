@@ -13,6 +13,7 @@ interface RequestConfig {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
+  _retryCount?: number;
 }
 
 interface ResponseConfig {
@@ -30,6 +31,7 @@ class HttpInterceptor {
     reject: (error: any) => void;
     config: RequestConfig;
   }> = [];
+  private readonly MAX_RETRY_ATTEMPTS = 1;
 
   /**
    * Get auth store instance (lazy initialization)
@@ -121,9 +123,12 @@ class HttpInterceptor {
       return response;
     }
 
-    // Handle 401 Unauthorized - try to refresh token
-    if (response.status === 401 && authStore.refreshToken) {
+    // Handle 401 Unauthorized - try to refresh token (but only if we haven't already retried)
+    if (response.status === 401 && authStore.refreshToken && (config._retryCount || 0) < this.MAX_RETRY_ATTEMPTS) {
+      console.log(`401 response, attempting token refresh. Retry count: ${config._retryCount || 0}`);
       return this.handleUnauthorized(config);
+    } else if (response.status === 401) {
+      console.log(`401 response, but max retries exceeded or no refresh token. Retry count: ${config._retryCount || 0}, Has refresh token: ${!!authStore.refreshToken}`);
     }
 
     // For other errors, return the response as-is
@@ -150,7 +155,9 @@ class HttpInterceptor {
       if (refreshSuccess) {
         // Token refreshed successfully, process queue and retry original request
         this.processQueue(null);
-        return this.makeRequest(originalConfig);
+        // Increment retry count to prevent infinite loops
+        const retryConfig = { ...originalConfig, _retryCount: (originalConfig._retryCount || 0) + 1 };
+        return this.makeRequest(retryConfig);
       } else {
         // Refresh failed, redirect to home page
         this.processQueue(new Error('Token refresh failed'));

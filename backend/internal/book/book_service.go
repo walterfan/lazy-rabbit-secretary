@@ -60,7 +60,7 @@ type BookResponse struct {
 	CreatedBy   string    `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedBy   string    `json:"updated_by"`
-	UpdatedTime time.Time `json:"updated_time"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // BookListResponse defines the response format for book lists
@@ -410,7 +410,7 @@ func (s *BookService) toResponse(book *models.Book) *BookResponse {
 		CreatedBy:   book.CreatedBy,
 		CreatedAt:   book.CreatedAt,
 		UpdatedBy:   book.UpdatedBy,
-		UpdatedTime: book.UpdatedTime,
+		UpdatedAt:   book.UpdatedAt,
 	}
 
 	if book.BorrowTime != nil {

@@ -11,14 +11,14 @@
           <div class="card-body">
             <form @submit.prevent="handleSignIn">
               <div class="mb-3">
-                <label for="realmName" class="form-label">Realm Name</label>
+                <label for="realmName" class="form-label">Organization Name</label>
                 <input
                   type="text"
                   class="form-control"
                   id="realmName"
                   v-model="form.realmName"
                   required
-                  placeholder="Enter realm name"
+                  placeholder="Enter Organization Name"
                 />
               </div>
               <div class="mb-3">

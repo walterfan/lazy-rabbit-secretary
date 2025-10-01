@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Secret, CreateSecretRequest, UpdateSecretRequest } from '@/types';
+import type { Secret, SecretVersion, CreateSecretRequest, UpdateSecretRequest, CreatePendingVersionRequest, DecryptVersionRequest } from '@/types';
 import { handleHttpError, showErrorAlert, logError } from '@/utils/errorHandler';
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 
@@ -231,6 +231,173 @@ export const useSecretStore = defineStore('secret', () => {
     }
   };
 
+  // Get secret versions
+  const getSecretVersions = async (secretId: string): Promise<SecretVersion[]> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await makeAuthenticatedRequest(`/api/v1/secrets/${secretId}/versions`);
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'getSecretVersions');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      const data = await response.json();
+      return data.versions || [];
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Decrypt specific version
+  const decryptSecretVersion = async (secretId: string, version: number, kek?: string): Promise<string> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const endpoint = kek 
+        ? `/api/v1/secrets/${secretId}/versions/${version}/decrypt-with-kek`
+        : `/api/v1/secrets/${secretId}/versions/${version}/decrypt`;
+      
+      const body = kek ? { kek } : {};
+      
+      const response = await makeAuthenticatedRequest(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'decryptSecretVersion');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      const { value } = await response.json();
+      return value;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Activate a specific version
+  const activateSecretVersion = async (secretId: string, version: number): Promise<void> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await makeAuthenticatedRequest(`/api/v1/secrets/${secretId}/versions/${version}/activate`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'activateSecretVersion');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      // Refresh the secret list to get updated version info
+      await fetchSecrets({});
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Delete a specific version
+  const deleteSecretVersion = async (secretId: string, version: number): Promise<void> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await makeAuthenticatedRequest(`/api/v1/secrets/${secretId}/versions/${version}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'deleteSecretVersion');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      // Refresh the secret list to get updated version info
+      await fetchSecrets({});
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Create a pending version
+  const createPendingVersion = async (secretId: string, request: CreatePendingVersionRequest): Promise<SecretVersion> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await makeAuthenticatedRequest(`/api/v1/secrets/${secretId}/versions/pending`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(request)
+      });
+      
+      if (!response.ok) {
+        const apiError = await handleHttpError(response);
+        logError(apiError, 'createPendingVersion');
+        showErrorAlert(apiError);
+        throw new Error(apiError.message);
+      }
+      
+      const newVersion = await response.json();
+      
+      // Refresh the secret list to get updated version info
+      await fetchSecrets({});
+      
+      return newVersion;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Copy secret value from specific version
+  const copySecretVersionValue = async (secretId: string, version: number, kek?: string): Promise<void> => {
+    try {
+      const value = await decryptSecretVersion(secretId, version, kek);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(value);
+      
+      // Show success message
+      alert('Secret value copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy secret version:', err);
+      alert('Failed to copy secret value');
+    }
+  };
+
   // Clear store
   const clearSecrets = () => {
     secrets.value = [];
@@ -250,6 +417,12 @@ export const useSecretStore = defineStore('secret', () => {
     deleteSecret,
     copySecretValue,
     copySecretValueWithKEK,
+    getSecretVersions,
+    decryptSecretVersion,
+    activateSecretVersion,
+    deleteSecretVersion,
+    createPendingVersion,
+    copySecretVersionValue,
     clearSecrets
   };
 });

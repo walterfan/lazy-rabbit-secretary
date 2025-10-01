@@ -1,35 +1,35 @@
 <template>
   <div class="wiki-page-actions">
     <div class="action-buttons">
+      <!-- History Button -->
+      <button 
+        class="btn btn-outline-secondary"
+        @click="$emit('history')"
+        :title="$t('wiki.history')"
+      >
+        <i class="bi bi-clock-history"></i>
+      </button>
+
       <!-- Edit Button -->
       <button 
         v-if="canEdit"
         class="btn btn-primary"
         @click="$emit('edit')"
         :disabled="page.is_locked"
+        :title="$t('wiki.edit')"
       >
         <i class="bi bi-pencil"></i>
-        {{ $t('wiki.edit') }}
-      </button>
-
-      <!-- History Button -->
-      <button 
-        class="btn btn-outline-secondary"
-        @click="$emit('history')"
-      >
-        <i class="bi bi-clock-history"></i>
-        {{ $t('wiki.history') }}
       </button>
 
       <!-- Lock/Unlock Button -->
-      <button 
+      <button
         v-if="isAuthenticated"
         class="btn"
         :class="page.is_locked ? 'btn-warning' : 'btn-outline-warning'"
         @click="page.is_locked ? $emit('unlock') : $emit('lock')"
+        :title="page.is_locked ? $t('wiki.unlock') : $t('wiki.lock')"
       >
         <i :class="page.is_locked ? 'bi bi-unlock' : 'bi bi-lock'"></i>
-        {{ page.is_locked ? $t('wiki.unlock') : $t('wiki.lock') }}
       </button>
 
       <!-- More Actions Dropdown -->

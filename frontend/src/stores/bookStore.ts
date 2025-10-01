@@ -52,7 +52,7 @@ export const useBookStore = defineStore('book', () => {
         return_time: book.return_time ? new Date(book.return_time) : undefined,
         deadline: book.deadline ? new Date(book.deadline) : undefined,
         created_at: new Date(book.created_at),
-        updated_time: new Date(book.updated_time),
+        updated_at: new Date(book.updated_at),
         tags: book.tags || []
       }));
       
@@ -90,7 +90,7 @@ export const useBookStore = defineStore('book', () => {
         return_time: book.return_time ? new Date(book.return_time) : undefined,
         deadline: book.deadline ? new Date(book.deadline) : undefined,
         created_at: new Date(book.created_at),
-        updated_time: new Date(book.updated_time),
+        updated_at: new Date(book.updated_at),
         tags: book.tags || []
       };
     } catch (err) {
@@ -141,7 +141,7 @@ export const useBookStore = defineStore('book', () => {
         return_time: newBook.return_time ? new Date(newBook.return_time) : undefined,
         deadline: newBook.deadline ? new Date(newBook.deadline) : undefined,
         created_at: new Date(newBook.created_at),
-        updated_time: new Date(newBook.updated_time),
+        updated_at: new Date(newBook.updated_at),
         tags: newBook.tags || []
       };
       
@@ -196,7 +196,7 @@ export const useBookStore = defineStore('book', () => {
         return_time: updatedBook.return_time ? new Date(updatedBook.return_time) : undefined,
         deadline: updatedBook.deadline ? new Date(updatedBook.deadline) : undefined,
         created_at: new Date(updatedBook.created_at),
-        updated_time: new Date(updatedBook.updated_time),
+        updated_at: new Date(updatedBook.updated_at),
         tags: updatedBook.tags || []
       };
       
@@ -300,7 +300,7 @@ export const useBookStore = defineStore('book', () => {
       return_time: book.return_time ? new Date(book.return_time) : undefined,
       deadline: book.deadline ? new Date(book.deadline) : undefined,
       created_at: new Date(book.created_at),
-      updated_time: new Date(book.updated_time),
+      updated_at: new Date(book.updated_at),
       tags: book.tags || []
     }));
   };
@@ -323,7 +323,7 @@ export const useBookStore = defineStore('book', () => {
       return_time: book.return_time ? new Date(book.return_time) : undefined,
       deadline: book.deadline ? new Date(book.deadline) : undefined,
       created_at: new Date(book.created_at),
-      updated_time: new Date(book.updated_time),
+      updated_at: new Date(book.updated_at),
       tags: book.tags || []
     }));
   };
@@ -346,7 +346,7 @@ export const useBookStore = defineStore('book', () => {
       return_time: book.return_time ? new Date(book.return_time) : undefined,
       deadline: book.deadline ? new Date(book.deadline) : undefined,
       created_at: new Date(book.created_at),
-      updated_time: new Date(book.updated_time),
+      updated_at: new Date(book.updated_at),
       tags: book.tags || []
     }));
   };
@@ -369,7 +369,7 @@ export const useBookStore = defineStore('book', () => {
       return_time: book.return_time ? new Date(book.return_time) : undefined,
       deadline: book.deadline ? new Date(book.deadline) : undefined,
       created_at: new Date(book.created_at),
-      updated_time: new Date(book.updated_time),
+      updated_at: new Date(book.updated_at),
       tags: book.tags || []
     }));
   };

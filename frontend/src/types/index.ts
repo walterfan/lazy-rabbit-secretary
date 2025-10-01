@@ -13,7 +13,7 @@ export interface Book {
   created_by: string;
   created_at: Date;
   updated_by: string;
-  updated_time: Date;
+  updated_at: Date;
 }
 
 export interface CreateBookRequest {
@@ -41,6 +41,85 @@ export interface BookListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface Bookmark {
+  id: string;
+  realm_id: string;
+  url: string;
+  title: string;
+  description: string;
+  tags: BookmarkTag[];
+  category_id: string;
+  created_by: string;
+  created_at: Date;
+  updated_by: string;
+  updated_at: Date;
+}
+
+export interface BookmarkTag {
+  id: string;
+  name: string;
+}
+
+export interface BookmarkCategory {
+  id: number;
+  name: string;
+  parent_id?: number;
+  created_by: string;
+  updated_by: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateBookmarkRequest {
+  url: string;
+  title: string;
+  description?: string;
+  tags?: string[];
+  category_id?: string;
+}
+
+export interface UpdateBookmarkRequest {
+  url?: string;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  category_id?: string;
+}
+
+export interface BookmarkListRequest {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  category_id?: string;
+  tags?: string[];
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface BookmarkListResponse {
+  bookmarks: Bookmark[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface CreateBookmarkCategoryRequest {
+  name: string;
+  parent_id?: number;
+}
+
+export interface UpdateBookmarkCategoryRequest {
+  name?: string;
+  parent_id?: number;
+}
+
+export interface BookmarkStats {
+  total_bookmarks: number;
+  total_tags: number;
+  total_categories: number;
 }
 
 export interface Prompt {
@@ -101,16 +180,29 @@ export interface Secret {
   group: string;
   desc: string;
   path: string;
+  current_version: number;
+  previous_version: number;
+  pending_version: number;
+  max_version: number;
+  created_by: string;
+  created_at: Date;
+  updated_by: string;
+  updated_at: Date;
+}
+
+export interface SecretVersion {
+  id: string;
+  secret_id: string;
+  version: number;
   cipher_alg: string;
   cipher_text: string;
   nonce: string;
   auth_tag: string;
   wrapped_dek: string;
   kek_version: number;
+  status: 'active' | 'deprecated' | 'pending';
   created_by: string;
   created_at: Date;
-  updated_by: string;
-  updated_at: Date;
 }
 
 export interface CreateSecretRequest {
@@ -130,6 +222,15 @@ export interface UpdateSecretRequest {
   value: string;
   current_value: string; // Current secret value for verification
   kek: string; // Custom KEK (empty string means use default)
+}
+
+export interface CreatePendingVersionRequest {
+  value: string;
+  kek?: string; // Optional custom KEK
+}
+
+export interface DecryptVersionRequest {
+  kek?: string; // Optional custom KEK
 }
 
 export interface Reminder {

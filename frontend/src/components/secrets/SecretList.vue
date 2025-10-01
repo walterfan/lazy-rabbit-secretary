@@ -71,11 +71,14 @@
               <div class="secret-name">
                 <i class="bi bi-key-fill text-primary"></i>
                 <span class="fw-medium">{{ secret.name }}</span>
-                <span v-if="secret.kek_version === 999" class="badge bg-warning ms-2" title="This secret requires a custom KEK for decryption">
-                  <i class="bi bi-shield-exclamation"></i> Custom KEK
+                <span class="badge bg-primary ms-2" title="Current version">
+                  <i class="bi bi-arrow-up-circle"></i> v{{ secret.current_version }}
                 </span>
-                <span v-else class="badge bg-info ms-2" title="This secret uses system default KEK">
-                  <i class="bi bi-shield-check"></i> v{{ secret.kek_version }}
+                <span v-if="secret.pending_version > 0" class="badge bg-warning ms-1" title="Pending version available">
+                  <i class="bi bi-clock"></i> v{{ secret.pending_version }}
+                </span>
+                <span v-if="secret.max_version > secret.current_version" class="badge bg-secondary ms-1" title="Multiple versions available">
+                  <i class="bi bi-layers"></i> {{ secret.max_version }} total
                 </span>
               </div>
             </td>
@@ -91,8 +94,8 @@
             <td class="col-meta">
               <div class="meta-info">
                 <div class="meta-item">
-                  <i class="bi bi-shield-check text-success"></i>
-                  <span class="small">{{ secret.cipher_alg }}</span>
+                  <i class="bi bi-layers text-info"></i>
+                  <span class="small">v{{ secret.current_version }}/{{ secret.max_version }}</span>
                 </div>
                 <div class="meta-item">
                   <i class="bi bi-person text-muted"></i>
@@ -119,6 +122,14 @@
                   title="Copy with custom KEK"
                 >
                   <i class="bi bi-key"></i>
+                </button>
+                <button
+                  v-if="secret.max_version > 1"
+                  class="btn btn-sm btn-outline-success"
+                  @click="$emit('view-versions', secret)"
+                  title="View versions"
+                >
+                  <i class="bi bi-layers"></i>
                 </button>
                 <button
                   class="btn btn-sm btn-outline-secondary"
@@ -226,6 +237,7 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
   (e: 'copy', secret: Secret): void;
   (e: 'copy-with-kek', secret: Secret): void;
+  (e: 'view-versions', secret: Secret): void;
   (e: 'update:searchQuery', value: string): void;
   (e: 'update:filters', filters: any): void;
   (e: 'update:page', page: number): void;

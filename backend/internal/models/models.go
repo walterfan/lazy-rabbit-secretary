@@ -43,6 +43,16 @@ package models
 // Comment - Threaded comments on posts
 //
 // =====================
+// 📊 Diagram System
+// =====================
+//
+// Diagram - Visual diagrams (Mermaid, PlantUML, Draw.io, etc.)
+// Image - Images associated with diagrams (multiple formats)
+// DiagramTag - Tags for organizing diagrams
+// DiagramTagRelation - Many-to-many diagrams ↔ tags
+// DiagramVersion - Version history for diagrams
+//
+// =====================
 // 🔗 Key Relationships
 // =====================
 //
@@ -57,6 +67,8 @@ package models
 // Post (many) ← → (many) PostTag (via PostTagRelation)
 // PostCategory (1) → (many) PostCategory (hierarchical)
 // Comment (1) → (many) Comment (threaded replies)
+// Diagram (1) → (many) Image, DiagramVersion
+// Diagram (many) ← → (many) DiagramTag (via DiagramTagRelation)
 //
 // =====================
 // 🎯 Permission Evaluation (AWS-style)
@@ -98,6 +110,7 @@ func GetAllModels() []interface{} {
 		&Document{},
 		&Prompt{},
 		&Secret{},
+		&SecretVersion{},
 
 		// Task & Reminder System
 		&Task{},
@@ -120,6 +133,19 @@ func GetAllModels() []interface{} {
 		// Wiki System
 		&WikiPage{},
 		&WikiRevision{},
+
+		// News System
+		&NewsItem{},
+		&Bookmark{},
+		&BookmarkCategory{},
+		&BookmarkTag{},
+
+		// Diagram System
+		&Diagram{},
+		&Image{},
+		&DiagramTag{},
+		&DiagramTagRelation{},
+		&DiagramVersion{},
 	}
 }
 
@@ -162,4 +188,14 @@ type DatabaseModels struct {
 	// Wiki System
 	WikiPages     []WikiPage
 	WikiRevisions []WikiRevision
+
+	// News System
+	NewsItems []NewsItem
+
+	// Diagram System
+	Diagrams            []Diagram
+	Images              []Image
+	DiagramTags         []DiagramTag
+	DiagramTagRelations []DiagramTagRelation
+	DiagramVersions     []DiagramVersion
 }

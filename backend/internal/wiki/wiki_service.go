@@ -768,6 +768,8 @@ func (s *WikiService) toPageResponse(page *models.WikiPage) *WikiPageResponse {
 		CreatedAt:      page.CreatedAt,
 		UpdatedBy:      page.UpdatedBy,
 		UpdatedAt:      page.UpdatedAt,
+		CanEdit:        page.CanBeEdited(),
+		CanDelete:      page.CanBeDeleted(),
 	}
 }
 

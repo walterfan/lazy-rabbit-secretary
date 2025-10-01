@@ -22,8 +22,17 @@ func NewPromptRoutes(db *gorm.DB) *PromptRoutes {
 }
 
 // RegisterRoutes registers prompt routes with the router
-func (r *PromptRoutes) RegisterRoutes(router *gin.Engine) {
+func (r *PromptRoutes) RegisterRoutes(router *gin.Engine, authMiddleware interface{}) {
+	// Type assert the middleware
+	middleware, ok := authMiddleware.(interface {
+		Authenticate() gin.HandlerFunc
+	})
+	if !ok {
+		panic("authMiddleware does not implement required interface")
+	}
+
 	prompts := router.Group("/api/v1/prompts")
+	prompts.Use(middleware.Authenticate()) // Apply authentication middleware
 	{
 		prompts.POST("", r.createPrompt)
 		prompts.GET("", r.listPrompts)

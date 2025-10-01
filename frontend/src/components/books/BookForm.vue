@@ -177,7 +177,7 @@ const bookData = ref<Book>({
   created_by: '',
   created_at: new Date(),
   updated_by: '',
-  updated_time: new Date(),
+  updated_at: new Date(),
 });
 
 const tagsInput = ref('');

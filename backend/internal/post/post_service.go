@@ -2,101 +2,78 @@ package post
 
 import (
 	"fmt"
+
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/models"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/prompt"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/llm"
+	"github.com/walterfan/lazy-rabbit-secretary/pkg/log"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 // PostService handles business logic for posts
 type PostService struct {
-	repo *PostRepository
+	repo          *PostRepository
+	promptService *prompt.PromptService
+	logger        *zap.SugaredLogger
 }
 
 // NewPostService creates a new post service
 func NewPostService(db *gorm.DB) *PostService {
 	return &PostService{
-		repo: NewPostRepository(db),
+		repo:          NewPostRepository(db),
+		promptService: prompt.NewPromptService(db),
+		logger:        log.GetLogger(),
 	}
+}
+
+// BasePostRequest contains common fields for all post operations
+type BasePostRequest struct {
+	Title           string                 `json:"title" validate:"min=1,max=200"`
+	Slug            string                 `json:"slug" validate:"max=200"`
+	Content         string                 `json:"content" validate:"min=1"`
+	Excerpt         string                 `json:"excerpt" validate:"max=500"`
+	Status          models.PostStatus      `json:"status" validate:"oneof=draft pending published private scheduled"`
+	Type            models.PostType        `json:"type" validate:"oneof=post page attachment revision custom"`
+	Format          models.PostFormat      `json:"format" validate:"oneof=standard aside gallery link image quote status video audio chat"`
+	Password        string                 `json:"password,omitempty" validate:"max=100"`
+	MetaTitle       string                 `json:"meta_title" validate:"max=200"`
+	MetaDescription string                 `json:"meta_description" validate:"max=500"`
+	MetaKeywords    string                 `json:"meta_keywords" validate:"max=200"`
+	FeaturedImage   string                 `json:"featured_image" validate:"url"`
+	Categories      []string               `json:"categories"`
+	Tags            []string               `json:"tags"`
+	ParentID        string                 `json:"parent_id,omitempty"`
+	MenuOrder       int                    `json:"menu_order"`
+	IsSticky        bool                   `json:"is_sticky"`
+	AllowPings      bool                   `json:"allow_pings"`
+	CommentStatus   string                 `json:"comment_status" validate:"oneof=open closed registration_required"`
+	ScheduledFor    *time.Time             `json:"scheduled_for,omitempty"`
+	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 // CreatePostRequest represents the request to create a post
 type CreatePostRequest struct {
-	Title           string                 `json:"title" binding:"required" validate:"required,min=1,max=200"`
-	Slug            string                 `json:"slug" validate:"max=200"`
-	Content         string                 `json:"content" validate:"required,min=1"`
-	Excerpt         string                 `json:"excerpt" validate:"max=500"`
-	Status          models.PostStatus      `json:"status" validate:"oneof=draft pending published private scheduled"`
-	Type            models.PostType        `json:"type" validate:"oneof=post page attachment revision custom"`
-	Format          models.PostFormat      `json:"format" validate:"oneof=standard aside gallery link image quote status video audio chat"`
-	Password        string                 `json:"password,omitempty" validate:"max=100"`
-	MetaTitle       string                 `json:"meta_title" validate:"max=200"`
-	MetaDescription string                 `json:"meta_description" validate:"max=500"`
-	MetaKeywords    string                 `json:"meta_keywords" validate:"max=200"`
-	FeaturedImage   string                 `json:"featured_image" validate:"url"`
-	Categories      []string               `json:"categories"`
-	Tags            []string               `json:"tags"`
-	ParentID        string                 `json:"parent_id,omitempty"`
-	MenuOrder       int                    `json:"menu_order"`
-	IsSticky        bool                   `json:"is_sticky"`
-	AllowPings      bool                   `json:"allow_pings"`
-	CommentStatus   string                 `json:"comment_status" validate:"oneof=open closed registration_required"`
-	ScheduledFor    *time.Time             `json:"scheduled_for,omitempty"`
-	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
+	BasePostRequest
+	// Override validation for required fields in create
+	Title   string `json:"title" binding:"required" validate:"required,min=1,max=200"`
+	Content string `json:"content" validate:"required,min=1"`
 }
 
 // UpdatePostRequest represents the request to update a post
 type UpdatePostRequest struct {
-	Title           string                 `json:"title" validate:"min=1,max=200"`
-	Slug            string                 `json:"slug" validate:"max=200"`
-	Content         string                 `json:"content" validate:"min=1"`
-	Excerpt         string                 `json:"excerpt" validate:"max=500"`
-	Status          models.PostStatus      `json:"status" validate:"oneof=draft pending published private scheduled"`
-	Type            models.PostType        `json:"type" validate:"oneof=post page attachment revision custom"`
-	Format          models.PostFormat      `json:"format" validate:"oneof=standard aside gallery link image quote status video audio chat"`
-	Password        string                 `json:"password,omitempty" validate:"max=100"`
-	MetaTitle       string                 `json:"meta_title" validate:"max=200"`
-	MetaDescription string                 `json:"meta_description" validate:"max=500"`
-	MetaKeywords    string                 `json:"meta_keywords" validate:"max=200"`
-	FeaturedImage   string                 `json:"featured_image" validate:"url"`
-	Categories      []string               `json:"categories"`
-	Tags            []string               `json:"tags"`
-	ParentID        string                 `json:"parent_id,omitempty"`
-	MenuOrder       int                    `json:"menu_order"`
-	IsSticky        bool                   `json:"is_sticky"`
-	AllowPings      bool                   `json:"allow_pings"`
-	CommentStatus   string                 `json:"comment_status" validate:"oneof=open closed registration_required"`
-	ScheduledFor    *time.Time             `json:"scheduled_for,omitempty"`
-	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
+	BasePostRequest
 }
 
 // RefineRequest represents the request to refine a post
 type RefineRequest struct {
-	Title           string                 `json:"title" validate:"min=1,max=200"`
-	Slug            string                 `json:"slug" validate:"max=200"`
-	Content         string                 `json:"content" validate:"min=1"`
-	Excerpt         string                 `json:"excerpt" validate:"max=500"`
-	Status          models.PostStatus      `json:"status" validate:"oneof=draft pending published private scheduled"`
-	Type            models.PostType        `json:"type" validate:"oneof=post page attachment revision custom"`
-	Format          models.PostFormat      `json:"format" validate:"oneof=standard aside gallery link image quote status video audio chat"`
-	Password        string                 `json:"password,omitempty" validate:"max=100"`
-	MetaTitle       string                 `json:"meta_title" validate:"max=200"`
-	MetaDescription string                 `json:"meta_description" validate:"max=500"`
-	MetaKeywords    string                 `json:"meta_keywords" validate:"max=200"`
-	FeaturedImage   string                 `json:"featured_image" validate:"url"`
-	Categories      []string               `json:"categories"`
-	Tags            []string               `json:"tags"`
-	ParentID        string                 `json:"parent_id,omitempty"`
-	MenuOrder       int                    `json:"menu_order"`
-	IsSticky        bool                   `json:"is_sticky"`
-	AllowPings      bool                   `json:"allow_pings"`
-	CommentStatus   string                 `json:"comment_status" validate:"oneof=open closed registration_required"`
-	ScheduledFor    *time.Time             `json:"scheduled_for,omitempty"`
-	CustomFields    map[string]interface{} `json:"custom_fields,omitempty"`
-	Action          string                 `json:"action" binding:"required" validate:"required,oneof=improve_writing make_shorter make_longer change_tone translate"`
-	Requirement     string                 `json:"requirement,omitempty" validate:"max=1000"`
+	BasePostRequest
+	Action      string `json:"action" binding:"required" validate:"required,oneof=improve_writing make_shorter make_longer change_tone translate"`
+	Requirement string `json:"requirement,omitempty" validate:"max=1000"`
 }
 
 // PostResponse represents the response for post operations
@@ -149,9 +126,9 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Generate slug if not provided
-	slug := req.Slug
+	slug := req.BasePostRequest.Slug
 	if slug == "" {
-		slug = s.generateSlugFromTitle(req.Title)
+		slug = s.generateSlugFromTitle(req.BasePostRequest.Title)
 	}
 
 	// Ensure slug is unique
@@ -164,23 +141,23 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	post := &models.Post{
 		ID:              uuid.New().String(),
 		RealmID:         realmID,
-		Title:           req.Title,
+		Title:           req.BasePostRequest.Title,
 		Slug:            uniqueSlug,
-		Content:         req.Content,
-		Excerpt:         req.Excerpt,
-		Status:          req.Status,
-		Type:            req.Type,
-		Format:          req.Format,
-		Password:        req.Password,
-		MetaTitle:       req.MetaTitle,
-		MetaDescription: req.MetaDescription,
-		MetaKeywords:    req.MetaKeywords,
-		FeaturedImage:   req.FeaturedImage,
-		MenuOrder:       req.MenuOrder,
-		IsSticky:        req.IsSticky,
-		AllowPings:      req.AllowPings,
-		CommentStatus:   req.CommentStatus,
-		ScheduledFor:    req.ScheduledFor,
+		Content:         req.BasePostRequest.Content,
+		Excerpt:         req.BasePostRequest.Excerpt,
+		Status:          req.BasePostRequest.Status,
+		Type:            req.BasePostRequest.Type,
+		Format:          req.BasePostRequest.Format,
+		Password:        req.BasePostRequest.Password,
+		MetaTitle:       req.BasePostRequest.MetaTitle,
+		MetaDescription: req.BasePostRequest.MetaDescription,
+		MetaKeywords:    req.BasePostRequest.MetaKeywords,
+		FeaturedImage:   req.BasePostRequest.FeaturedImage,
+		MenuOrder:       req.BasePostRequest.MenuOrder,
+		IsSticky:        req.BasePostRequest.IsSticky,
+		AllowPings:      req.BasePostRequest.AllowPings,
+		CommentStatus:   req.BasePostRequest.CommentStatus,
+		ScheduledFor:    req.BasePostRequest.ScheduledFor,
 		Language:        "en", // Default language
 		CreatedBy:       createdBy,
 		CreatedAt:       time.Now(),
@@ -189,17 +166,17 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Set categories and tags
-	post.SetCategories(req.Categories)
-	post.SetTags(req.Tags)
+	post.SetCategories(req.BasePostRequest.Categories)
+	post.SetTags(req.BasePostRequest.Tags)
 
 	// Set parent ID if provided
-	if req.ParentID != "" {
-		post.ParentID = &req.ParentID
+	if req.BasePostRequest.ParentID != "" {
+		post.ParentID = &req.BasePostRequest.ParentID
 	}
 
 	// Handle custom fields
-	if len(req.CustomFields) > 0 {
-		customFieldsJSON, err := s.serializeCustomFields(req.CustomFields)
+	if len(req.BasePostRequest.CustomFields) > 0 {
+		customFieldsJSON, err := s.serializeCustomFields(req.BasePostRequest.CustomFields)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize custom fields: %w", err)
 		}
@@ -207,11 +184,11 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Handle publishing logic
-	if req.Status == models.PostStatusPublished {
+	if req.BasePostRequest.Status == models.PostStatusPublished {
 		now := time.Now()
 		post.PublishedAt = &now
-	} else if req.Status == models.PostStatusScheduled && req.ScheduledFor != nil {
-		post.ScheduledFor = req.ScheduledFor
+	} else if req.BasePostRequest.Status == models.PostStatusScheduled && req.BasePostRequest.ScheduledFor != nil {
+		post.ScheduledFor = req.BasePostRequest.ScheduledFor
 	}
 
 	// Save to database
@@ -239,92 +216,74 @@ func (s *PostService) UpdateFromInput(id string, req *UpdatePostRequest, updated
 	}
 
 	// Update fields if provided
-	if req.Title != "" {
-		post.Title = req.Title
+	if req.BasePostRequest.Title != "" {
+		post.Title = req.BasePostRequest.Title
 	}
-	if req.Slug != "" {
+	if req.BasePostRequest.Slug != "" {
 		// Ensure slug is unique
-		uniqueSlug, err := s.ensureUniqueSlug(req.Slug, post.RealmID, id)
+		uniqueSlug, err := s.ensureUniqueSlug(req.BasePostRequest.Slug, post.RealmID, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate unique slug: %w", err)
 		}
 		post.Slug = uniqueSlug
 	}
-	if req.Content != "" {
-		post.Content = req.Content
+	if req.BasePostRequest.Content != "" {
+		post.Content = req.BasePostRequest.Content
 	}
-	if req.Excerpt != "" {
-		post.Excerpt = req.Excerpt
+	if req.BasePostRequest.Excerpt != "" {
+		post.Excerpt = req.BasePostRequest.Excerpt
 	}
-	if req.Status != "" {
+	if req.BasePostRequest.Status != "" {
 		oldStatus := post.Status
-		post.Status = req.Status
-
-		// Update realm ID based on new status and type
-		if req.Status == "published" && post.Type == "post" {
-			// Public posts use PUBLIC_REALM_ID
-			post.RealmID = models.PUBLIC_REALM_ID
-		} else if oldStatus == "published" && req.Status != "published" {
-			// If changing from published to non-published, use DEFAULT_REALM_ID
-			post.RealmID = models.DEFAULT_REALM_ID
-		}
+		post.Status = req.BasePostRequest.Status
 
 		// Handle status transitions
-		if err := s.handleStatusTransition(post, oldStatus, req.Status, req.ScheduledFor); err != nil {
+		if err := s.handleStatusTransition(post, oldStatus, req.BasePostRequest.Status, req.BasePostRequest.ScheduledFor); err != nil {
 			return nil, fmt.Errorf("failed to handle status transition: %w", err)
 		}
 	}
-	if req.Type != "" {
-		post.Type = req.Type
-
-		// Update realm ID based on type and status
-		if post.Status == "published" && req.Type == "post" {
-			// Public posts use PUBLIC_REALM_ID
-			post.RealmID = models.PUBLIC_REALM_ID
-		} else if post.Status == "published" && req.Type != "post" {
-			// Published pages/other types use DEFAULT_REALM_ID
-			post.RealmID = models.DEFAULT_REALM_ID
-		}
+	if req.BasePostRequest.Type != "" {
+		post.Type = req.BasePostRequest.Type
 	}
-	if req.Format != "" {
-		post.Format = req.Format
+	if req.BasePostRequest.Format != "" {
+		post.Format = req.BasePostRequest.Format
 	}
-	if req.Password != "" {
-		post.Password = req.Password
+	if req.BasePostRequest.Password != "" {
+		post.Password = req.BasePostRequest.Password
 	}
-	if req.MetaTitle != "" {
-		post.MetaTitle = req.MetaTitle
+	if req.BasePostRequest.MetaTitle != "" {
+		post.MetaTitle = req.BasePostRequest.MetaTitle
 	}
-	if req.MetaDescription != "" {
-		post.MetaDescription = req.MetaDescription
+	if req.BasePostRequest.MetaDescription != "" {
+		post.MetaDescription = req.BasePostRequest.MetaDescription
 	}
-	if req.MetaKeywords != "" {
-		post.MetaKeywords = req.MetaKeywords
+	if req.BasePostRequest.MetaKeywords != "" {
+		post.MetaKeywords = req.BasePostRequest.MetaKeywords
 	}
-	if req.FeaturedImage != "" {
-		post.FeaturedImage = req.FeaturedImage
+	if req.BasePostRequest.FeaturedImage != "" {
+		post.FeaturedImage = req.BasePostRequest.FeaturedImage
 	}
-	if len(req.Categories) > 0 {
-		post.SetCategories(req.Categories)
+	if len(req.BasePostRequest.Categories) > 0 {
+		post.SetCategories(req.BasePostRequest.Categories)
 	}
-	if len(req.Tags) > 0 {
-		post.SetTags(req.Tags)
+	if len(req.BasePostRequest.Tags) > 0 {
+		post.SetTags(req.BasePostRequest.Tags)
 	}
-	if req.ParentID != "" {
-		post.ParentID = &req.ParentID
+	if req.BasePostRequest.ParentID != "" {
+		post.ParentID = &req.BasePostRequest.ParentID
 	}
-	if req.MenuOrder != 0 {
-		post.MenuOrder = req.MenuOrder
+	if req.BasePostRequest.MenuOrder != 0 {
+		post.MenuOrder = req.BasePostRequest.MenuOrder
 	}
-	post.IsSticky = req.IsSticky
-	post.AllowPings = req.AllowPings
-	if req.CommentStatus != "" {
-		post.CommentStatus = req.CommentStatus
+	post.IsSticky = req.BasePostRequest.IsSticky
+	post.AllowPings = req.BasePostRequest.AllowPings
+	if req.BasePostRequest.CommentStatus != "" {
+		post.CommentStatus = req.BasePostRequest.CommentStatus
 	}
 
 	// Handle custom fields
-	if len(req.CustomFields) > 0 {
-		customFieldsJSON, err := s.serializeCustomFields(req.CustomFields)
+	if len(req.BasePostRequest.CustomFields) > 0 {
+		customFieldsJSON, err := s.serializeCustomFields(req.BasePostRequest.CustomFields)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize custom fields: %w", err)
 		}
@@ -358,37 +317,28 @@ func (s *PostService) RefinePost(id string, req *RefineRequest, updatedBy string
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
 
-	// Apply refinement based on action
-	switch req.Action {
-	case "improve_writing":
-		post.Content = s.improveWriting(post.Content, req.Requirement)
-	case "make_shorter":
-		post.Content = s.makeShorter(post.Content, req.Requirement)
-	case "make_longer":
-		post.Content = s.makeLonger(post.Content, req.Requirement)
-	case "change_tone":
-		post.Content = s.changeTone(post.Content, req.Requirement)
-	case "translate":
-		post.Content = s.translateContent(post.Content, req.Requirement)
-	default:
-		return nil, fmt.Errorf("unsupported action: %s", req.Action)
+	// Apply refinement based on action using LLM
+	refinedContent, err := s.refineContentWithLLM(post.Content, req.Action, req.Requirement)
+	if err != nil {
+		return nil, fmt.Errorf("failed to refine content: %w", err)
 	}
+	post.Content = refinedContent
 
 	// Update other fields if provided
-	if req.Title != "" {
-		post.Title = req.Title
+	if req.BasePostRequest.Title != "" {
+		post.Title = req.BasePostRequest.Title
 	}
-	if req.Excerpt != "" {
-		post.Excerpt = req.Excerpt
+	if req.BasePostRequest.Excerpt != "" {
+		post.Excerpt = req.BasePostRequest.Excerpt
 	}
-	if req.MetaTitle != "" {
-		post.MetaTitle = req.MetaTitle
+	if req.BasePostRequest.MetaTitle != "" {
+		post.MetaTitle = req.BasePostRequest.MetaTitle
 	}
-	if req.MetaDescription != "" {
-		post.MetaDescription = req.MetaDescription
+	if req.BasePostRequest.MetaDescription != "" {
+		post.MetaDescription = req.BasePostRequest.MetaDescription
 	}
-	if req.MetaKeywords != "" {
-		post.MetaKeywords = req.MetaKeywords
+	if req.BasePostRequest.MetaKeywords != "" {
+		post.MetaKeywords = req.BasePostRequest.MetaKeywords
 	}
 
 	post.UpdatedBy = updatedBy
@@ -620,32 +570,32 @@ func (s *PostService) Schedule(id string, scheduledTime time.Time, updatedBy str
 // Helper methods
 
 func (s *PostService) validateCreateRequest(req *CreatePostRequest) error {
-	if strings.TrimSpace(req.Title) == "" {
+	if strings.TrimSpace(req.BasePostRequest.Title) == "" {
 		return fmt.Errorf("title is required")
 	}
-	if strings.TrimSpace(req.Content) == "" {
+	if strings.TrimSpace(req.BasePostRequest.Content) == "" {
 		return fmt.Errorf("content is required")
 	}
-	if req.Status == "" {
-		req.Status = models.PostStatusDraft
+	if req.BasePostRequest.Status == "" {
+		req.BasePostRequest.Status = models.PostStatusDraft
 	}
-	if req.Type == "" {
-		req.Type = models.PostTypePost
+	if req.BasePostRequest.Type == "" {
+		req.BasePostRequest.Type = models.PostTypePost
 	}
-	if req.Format == "" {
-		req.Format = models.PostFormatStandard
+	if req.BasePostRequest.Format == "" {
+		req.BasePostRequest.Format = models.PostFormatStandard
 	}
-	if req.CommentStatus == "" {
-		req.CommentStatus = "open"
+	if req.BasePostRequest.CommentStatus == "" {
+		req.BasePostRequest.CommentStatus = "open"
 	}
 	return nil
 }
 
 func (s *PostService) validateUpdateRequest(req *UpdatePostRequest) error {
-	if req.Title != "" && strings.TrimSpace(req.Title) == "" {
+	if req.BasePostRequest.Title != "" && strings.TrimSpace(req.BasePostRequest.Title) == "" {
 		return fmt.Errorf("title cannot be empty")
 	}
-	if req.Content != "" && strings.TrimSpace(req.Content) == "" {
+	if req.BasePostRequest.Content != "" && strings.TrimSpace(req.BasePostRequest.Content) == "" {
 		return fmt.Errorf("content cannot be empty")
 	}
 	return nil
@@ -806,6 +756,53 @@ func (s *PostService) serializeCustomFields(fields map[string]interface{}) (stri
 	// In a real implementation, you'd use JSON marshaling
 	// For simplicity, returning empty string here
 	return "", nil
+}
+
+// refineContentWithLLM uses LLM to refine content based on action and requirement
+func (s *PostService) refineContentWithLLM(content, action, requirement string) (string, error) {
+	// Try to get prompt from repository first
+	systemPrompt, userPrompt, err := s.getRefinePrompts(action, requirement, content)
+	if err != nil {
+		return "", fmt.Errorf("failed to get refine prompts: %w", err)
+	}
+	s.logger.Infof("Refining content with LLM - Action: %s, systemPrompt: %s, userPrompt: %s", action, systemPrompt, userPrompt)
+	// Call LLM
+	refinedContent, err := llm.AskLLM(systemPrompt, userPrompt)
+	if err != nil {
+		return "", fmt.Errorf("LLM call failed: %w", err)
+	}
+
+	return refinedContent, nil
+}
+
+// getRefinePrompts retrieves or creates prompts for content refinement
+func (s *PostService) getRefinePrompts(promptName, requirement, content string) (systemPrompt, userPrompt string, err error) {
+	// Map frontend actions to backend prompt names and extract requirements
+
+	var extractedRequirement string
+
+	// Use extracted requirement if available, otherwise use provided requirement
+	if extractedRequirement != "" {
+		requirement = extractedRequirement
+	}
+
+	// Try to get the prompt from repository
+	promptResponse, err := s.promptService.GetByName(promptName)
+	if err == nil {
+		// Found prompt in repository, use it
+		userPrompt = promptResponse.UserPrompt
+		if requirement != "" {
+			// Replace placeholders in user prompt
+			userPrompt = strings.ReplaceAll(userPrompt, "{{requirement}}", requirement)
+			userPrompt = strings.ReplaceAll(userPrompt, "{{tone}}", requirement)
+			userPrompt = strings.ReplaceAll(userPrompt, "{{language}}", requirement)
+		}
+		userPrompt = strings.ReplaceAll(userPrompt, "{{content}}", content)
+		return promptResponse.SystemPrompt, userPrompt, nil
+	}
+
+	// Prompt not found in repository, return error
+	return "", "", fmt.Errorf("prompt '%s' not found in repository", promptName)
 }
 
 func (s *PostService) toResponse(post *models.Post) *PostResponse {

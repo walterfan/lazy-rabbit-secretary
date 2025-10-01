@@ -311,13 +311,14 @@
           <h5 class="mb-0">JWT Encode/Decode</h5>
         </div>
         <div class="card-body">
-          <div class="row">
+          <!-- JWT Decode Section -->
+          <div class="row mb-4">
             <div class="col-md-6">
-              <label class="form-label">JWT Token:</label>
-              <textarea 
+              <label class="form-label">JWT Token (for decoding):</label>
+              <textarea
                 v-model="jwtInput" 
-                class="form-control" 
-                rows="6" 
+                class="form-control"
+                rows="4" 
                 placeholder="Enter JWT token to decode..."
               ></textarea>
               <div class="mt-2">
@@ -331,10 +332,10 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Decoded Payload:</label>
-              <textarea 
-                v-model="jwtOutput" 
-                class="form-control" 
-                rows="6" 
+              <textarea
+                v-model="jwtOutput"
+                class="form-control"
+                rows="4"
                 readonly
                 placeholder="Decoded JWT payload will appear here..."
               ></textarea>
@@ -345,7 +346,57 @@
               </div>
             </div>
           </div>
-          
+
+          <!-- JWT Encode Section -->
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Header (JSON):</label>
+              <textarea
+                v-model="jwtEncodeHeader"
+                class="form-control mb-3"
+                rows="3"
+                placeholder='{"alg": "HS256", "typ": "JWT"}'
+              ></textarea>
+              <label class="form-label">Payload (JSON):</label>
+              <textarea
+                v-model="jwtEncodePayload"
+                class="form-control mb-3"
+                rows="4"
+                placeholder='{"sub": "1234567890", "name": "John Doe", "iat": 1516239022}'
+              ></textarea>
+              <label class="form-label">Secret Key:</label>
+              <input
+                v-model="jwtSecret"
+                type="password"
+                class="form-control mb-3"
+                placeholder="Enter secret key for signing..."
+              />
+              <div class="mt-2">
+                <button @click="encodeJWT" class="btn btn-success me-2">
+                  <i class="bi bi-arrow-up-circle me-1"></i>Encode JWT
+                </button>
+                <button @click="clearJWTEncode" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash me-1"></i>Clear
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Encoded JWT Token:</label>
+              <textarea
+                v-model="jwtEncodedOutput"
+                class="form-control"
+                rows="6"
+                readonly
+                placeholder="Encoded JWT token will appear here..."
+              ></textarea>
+              <div class="mt-2">
+                <button @click="copyToClipboard(jwtEncodedOutput)" class="btn btn-outline-success btn-sm">
+                  <i class="bi bi-clipboard me-1"></i>Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- JWT Details -->
           <div class="row mt-4" v-if="jwtDetails.header || jwtDetails.payload">
             <div class="col-12">
@@ -438,6 +489,12 @@ const jwtDetails = ref({
   exp: null as number | null,
   iat: null as number | null
 })
+
+// JWT encoding
+const jwtEncodeHeader = ref<string>('{"alg": "HS256", "typ": "JWT"}')
+const jwtEncodePayload = ref<string>('{"sub": "1234567890", "name": "John Doe", "iat": 1516239022}')
+const jwtSecret = ref<string>('')
+const jwtEncodedOutput = ref<string>('')
 
 // Base64 functions
 const encodeBase64 = () => {
@@ -665,6 +722,78 @@ const clearJWT = () => {
     exp: null,
     iat: null
   }
+}
+
+// JWT encoding functions
+const encodeJWT = () => {
+  try {
+    // Validate inputs
+    if (!jwtEncodeHeader.value.trim()) {
+      jwtEncodedOutput.value = 'Error: Header is required'
+      return
+    }
+    if (!jwtEncodePayload.value.trim()) {
+      jwtEncodedOutput.value = 'Error: Payload is required'
+      return
+    }
+    if (!jwtSecret.value.trim()) {
+      jwtEncodedOutput.value = 'Error: Secret key is required'
+      return
+    }
+
+    // Parse JSON inputs
+    const header = JSON.parse(jwtEncodeHeader.value)
+    const payload = JSON.parse(jwtEncodePayload.value)
+
+    // Encode header and payload
+    const encodedHeader = btoa(JSON.stringify(header))
+    const encodedPayload = btoa(JSON.stringify(payload))
+
+    // Create signature (simplified HMAC-SHA256 simulation)
+    const signature = createJWTSignature(encodedHeader, encodedPayload, jwtSecret.value)
+
+    // Combine all parts
+    jwtEncodedOutput.value = `${encodedHeader}.${encodedPayload}.${signature}`
+
+  } catch (error) {
+    jwtEncodedOutput.value = `Error: ${error instanceof Error ? error.message : 'Invalid JSON format'}`
+  }
+}
+
+const createJWTSignature = (header: string, payload: string, secret: string): string => {
+  // This is a simplified signature creation for demonstration
+  // In a real application, you would use a proper HMAC-SHA256 implementation
+  const data = `${header}.${payload}`
+  const encoder = new TextEncoder()
+  const keyData = encoder.encode(secret)
+  const messageData = encoder.encode(data)
+  
+  // Simple hash simulation (not cryptographically secure)
+  let hash = 0
+  for (let i = 0; i < messageData.length; i++) {
+    hash = ((hash << 5) - hash + messageData[i]) & 0xffffffff
+  }
+  
+  // Combine with key
+  for (let i = 0; i < keyData.length; i++) {
+    hash = ((hash << 5) - hash + keyData[i]) & 0xffffffff
+  }
+  
+  // Convert to base64
+  const hashBytes = new Uint8Array(4)
+  hashBytes[0] = (hash >>> 24) & 0xff
+  hashBytes[1] = (hash >>> 16) & 0xff
+  hashBytes[2] = (hash >>> 8) & 0xff
+  hashBytes[3] = hash & 0xff
+  
+  return btoa(String.fromCharCode(...hashBytes))
+}
+
+const clearJWTEncode = () => {
+  jwtEncodeHeader.value = '{"alg": "HS256", "typ": "JWT"}'
+  jwtEncodePayload.value = '{"sub": "1234567890", "name": "John Doe", "iat": 1516239022}'
+  jwtSecret.value = ''
+  jwtEncodedOutput.value = ''
 }
 
 const formatJWTDate = (timestamp: number): string => {

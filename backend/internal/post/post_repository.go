@@ -58,7 +58,7 @@ func (r *PostRepository) List(realmID string, status models.PostStatus, postType
 	var posts []*models.Post
 	var total int64
 
-	query := r.db.Model(&models.Post{}).Where("realm_id = ? or realm_id = ?", realmID, models.PUBLIC_REALM_ID)
+	query := r.db.Model(&models.Post{}).Where("realm_id = ?", realmID)
 
 	if status != "" {
 		query = query.Where("status = ?", status)

@@ -2,6 +2,8 @@ package auth
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -20,9 +22,36 @@ func NewAuthMiddleware(authService *AuthService) *AuthMiddleware {
 	}
 }
 
+// isAuthDisabled checks if authentication is disabled via DISABLE_AUTH environment variable
+func isAuthDisabled() bool {
+	disableAuth := os.Getenv("DISABLE_AUTH")
+	if disableAuth == "" {
+		return false // Default to enabled
+	}
+
+	disabled, err := strconv.ParseBool(disableAuth)
+	if err != nil {
+		return false // Default to enabled if parsing fails
+	}
+
+	return disabled
+}
+
 // Authenticate validates JWT tokens and sets user context
 func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Check if authentication is disabled
+		if isAuthDisabled() {
+			// Set default context values when auth is disabled
+			c.Set("user_id", "disabled-auth-user")
+			c.Set("realm_id", "default-realm")
+			c.Set("username", "disabled-auth")
+			c.Set("email", "disabled@auth.local")
+			c.Set("roles", []string{"admin"})
+			c.Next()
+			return
+		}
+
 		// Get Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -56,6 +85,58 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		c.Set("email", claims.Email)
 		c.Set("roles", claims.Roles)
 		c.Set("jwt_claims", claims)
+
+		c.Next()
+	}
+}
+
+// OptionalAuth attempts to authenticate but allows access even without authentication
+func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Check if authentication is disabled
+		if isAuthDisabled() {
+			// Set default context values when auth is disabled
+			c.Set("user_id", "disabled-auth-user")
+			c.Set("realm_id", "default-realm")
+			c.Set("username", "disabled-auth")
+			c.Set("email", "disabled@auth.local")
+			c.Set("roles", []string{"admin"})
+			c.Next()
+			return
+		}
+
+		// Try to get Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			// No auth header, continue without authentication
+			c.Next()
+			return
+		}
+
+		// Check Bearer token format
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			// Invalid format, continue without authentication
+			c.Next()
+			return
+		}
+
+		tokenString := tokenParts[1]
+
+		// Try to validate token
+		claims, err := m.authService.ValidateToken(tokenString)
+		if err != nil {
+			// Invalid token, continue without authentication
+			c.Next()
+			return
+		}
+
+		// Token is valid, set user context
+		c.Set("user_id", claims.UserID)
+		c.Set("realm_id", claims.RealmID)
+		c.Set("username", claims.Username)
+		c.Set("email", claims.Email)
+		c.Set("roles", claims.Roles)
 
 		c.Next()
 	}
@@ -175,44 +256,6 @@ func (m *AuthMiddleware) RequirePermission(action, resource string) gin.HandlerF
 			c.Abort()
 			return
 		}
-
-		c.Next()
-	}
-}
-
-// OptionalAuth provides optional authentication (sets context if token is valid)
-func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Get Authorization header
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.Next()
-			return
-		}
-
-		// Check Bearer token format
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.Next()
-			return
-		}
-
-		tokenString := tokenParts[1]
-
-		// Try to validate token (don't fail if invalid)
-		claims, err := m.authService.ValidateToken(tokenString)
-		if err != nil {
-			c.Next()
-			return
-		}
-
-		// Set user context if token is valid
-		c.Set("user_id", claims.UserID)
-		c.Set("realm_id", claims.RealmID)
-		c.Set("username", claims.Username)
-		c.Set("email", claims.Email)
-		c.Set("roles", claims.Roles)
-		c.Set("jwt_claims", claims)
 
 		c.Next()
 	}

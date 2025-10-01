@@ -5,24 +5,24 @@ import (
 )
 
 // RegisterRoutes registers authentication routes with the Gin router
-func RegisterRoutes(router *gin.Engine, handlers *AuthHandlers, middleware *AuthMiddleware) {
+func RegisterRoutes(router *gin.Engine, authHandlers *AuthHandlers, userHandlers *UserHandlers, roleHandlers *RoleHandlers, policyHandlers *PolicyHandlers, realmHandlers *RealmHandlers, middleware *AuthMiddleware) {
 	// Public routes (no authentication required)
 	public := router.Group("/api/v1/auth")
 	{
-		public.POST("/login", handlers.Login)
-		public.POST("/register", handlers.Register)
-		public.GET("/confirm", handlers.ConfirmEmail)
-		public.POST("/refresh", handlers.RefreshToken)
-		public.GET("/health", handlers.HealthCheck)
+		public.POST("/login", authHandlers.Login)
+		public.POST("/register", authHandlers.Register)
+		public.GET("/confirm", authHandlers.ConfirmEmail)
+		public.POST("/refresh", authHandlers.RefreshToken)
+		public.GET("/health", authHandlers.HealthCheck)
 	}
 
 	// Protected routes (authentication required)
 	protected := router.Group("/api/v1/auth")
 	protected.Use(middleware.Authenticate())
 	{
-		protected.GET("/profile", handlers.GetProfile)
-		protected.GET("/permissions/check", handlers.CheckPermission)
-		protected.POST("/logout", handlers.Logout)
+		protected.GET("/profile", authHandlers.GetProfile)
+		protected.GET("/permissions/check", authHandlers.CheckPermission)
+		protected.POST("/logout", authHandlers.Logout)
 	}
 
 	// Admin routes (require admin role)
@@ -31,37 +31,37 @@ func RegisterRoutes(router *gin.Engine, handlers *AuthHandlers, middleware *Auth
 	admin.Use(middleware.RequireRole("admin", "super_admin"))
 	{
 		// User management
-		admin.GET("/users", handlers.GetUsers)          // List users
-		admin.POST("/users", handlers.CreateUser)       // Create user
-		admin.GET("/users/:id", handlers.GetUser)       // Get user
-		admin.PUT("/users/:id", handlers.UpdateUser)    // Update user
-		admin.DELETE("/users/:id", handlers.DeleteUser) // Delete user
+		admin.GET("/users", userHandlers.GetUsers)          // List users
+		admin.POST("/users", userHandlers.CreateUser)       // Create user
+		admin.GET("/users/:id", userHandlers.GetUser)       // Get user
+		admin.PUT("/users/:id", userHandlers.UpdateUser)    // Update user
+		admin.DELETE("/users/:id", userHandlers.DeleteUser) // Delete user
 
 		// Registration management
-		admin.GET("/registrations", handlers.GetPendingRegistrations)      // List pending registrations
-		admin.POST("/registrations/approve", handlers.ApproveRegistration) // Approve/deny registration
-		admin.GET("/registrations/stats", handlers.GetRegistrationStats)   // Get registration statistics
+		admin.GET("/registrations", userHandlers.GetPendingRegistrations)      // List pending registrations
+		admin.POST("/registrations/approve", userHandlers.ApproveRegistration) // Approve/deny registration
+		admin.GET("/registrations/stats", userHandlers.GetRegistrationStats)   // Get registration statistics
 
 		// Role management
-		admin.GET("/roles", handlers.GetRoles)          // List roles
-		admin.POST("/roles", handlers.CreateRole)       // Create role
-		admin.GET("/roles/:id", handlers.GetRole)       // Get role
-		admin.PUT("/roles/:id", handlers.UpdateRole)    // Update role
-		admin.DELETE("/roles/:id", handlers.DeleteRole) // Delete role
+		admin.GET("/roles", roleHandlers.GetRoles)          // List roles
+		admin.POST("/roles", roleHandlers.CreateRole)       // Create role
+		admin.GET("/roles/:id", roleHandlers.GetRole)       // Get role
+		admin.PUT("/roles/:id", roleHandlers.UpdateRole)    // Update role
+		admin.DELETE("/roles/:id", roleHandlers.DeleteRole) // Delete role
 
 		// Policy management
-		admin.GET("/policies", handlers.GetPolicies)         // List policies
-		admin.POST("/policies", handlers.CreatePolicy)       // Create policy
-		admin.GET("/policies/:id", handlers.GetPolicy)       // Get policy
-		admin.PUT("/policies/:id", handlers.UpdatePolicy)    // Update policy
-		admin.DELETE("/policies/:id", handlers.DeletePolicy) // Delete policy
+		admin.GET("/policies", policyHandlers.GetPolicies)         // List policies
+		admin.POST("/policies", policyHandlers.CreatePolicy)       // Create policy
+		admin.GET("/policies/:id", policyHandlers.GetPolicy)       // Get policy
+		admin.PUT("/policies/:id", policyHandlers.UpdatePolicy)    // Update policy
+		admin.DELETE("/policies/:id", policyHandlers.DeletePolicy) // Delete policy
 
 		// Realm management
-		admin.GET("/realms", handlers.GetRealms)          // List realms
-		admin.POST("/realms", handlers.CreateRealm)       // Create realm
-		admin.GET("/realms/:id", handlers.GetRealm)       // Get realm
-		admin.PUT("/realms/:id", handlers.UpdateRealm)    // Update realm
-		admin.DELETE("/realms/:id", handlers.DeleteRealm) // Delete realm
+		admin.GET("/realms", realmHandlers.GetRealms)          // List realms
+		admin.POST("/realms", realmHandlers.CreateRealm)       // Create realm
+		admin.GET("/realms/:id", realmHandlers.GetRealm)       // Get realm
+		admin.PUT("/realms/:id", realmHandlers.UpdateRealm)    // Update realm
+		admin.DELETE("/realms/:id", realmHandlers.DeleteRealm) // Delete realm
 	}
 }
 

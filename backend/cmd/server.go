@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/go-redis/redis/v8"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -45,17 +40,16 @@ var serverCmd = &cobra.Command{
 
 		defer database.CloseDB()
 
-		// Initialize Redis and Auth services
-		rdb := initRedis(logger)
+		// Initialize Auth service
 		authService := initAuth(logger)
 
 		logger.Info("Starting HTTP service...")
-		webService := api.NewWebApiService(logger, rdb, authService)
+		webService := api.NewWebApiService(logger, authService)
 		go webService.Run()
 
 		logger.Info("Starting Job Manager...")
 		db := database.GetDB()
-		tm := jobs.NewJobManager(logger, rdb, db)
+		tm := jobs.NewJobManager(logger, nil, db) // Pass nil for Redis client
 		go tm.CheckTasks()
 
 		signalChan := make(chan os.Signal, 1)
@@ -65,42 +59,6 @@ var serverCmd = &cobra.Command{
 		<-signalChan
 		logger.Info("Received shutdown signal, shutting down.")
 	},
-}
-
-func initRedis(logger *zap.Logger) *redis.Client {
-
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-
-	if redisHost == "" || redisPort == "" {
-		logger.Warn("REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD not set")
-		return nil
-	}
-
-	// Initialize the Redis client
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: redisPassword,
-		DB:       0, // Use default DB
-	})
-
-	ctx := context.Background()
-	newsKey := "news:latest"
-	timestamp := time.Now().Unix()
-
-	err := rdb.ZAdd(ctx, newsKey, &redis.Z{
-		Score:  float64(timestamp),
-		Member: "Your news message here",
-	}).Err()
-
-	if err != nil {
-		logger.Error("Error adding news to Redis",
-			zap.Error(err),
-		)
-	}
-
-	return rdb
 }
 
 func initAuth(logger *zap.Logger) *auth.AuthService {

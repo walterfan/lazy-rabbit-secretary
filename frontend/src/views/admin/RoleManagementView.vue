@@ -4,25 +4,37 @@
       <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>
-            <i class="bi bi-shield"></i> Role Management
+            <i class="bi bi-shield"></i> {{ $t('admin.roleManagement') }}
           </h2>
           <button class="btn btn-primary" @click="showCreateModal = true">
-            <i class="bi bi-plus"></i> Add Role
+            <i class="bi bi-plus"></i> {{ $t('admin.addRole') }}
           </button>
         </div>
 
+        <!-- Loading State -->
+        <div v-if="roleStore.loading" class="text-center py-4">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">{{ $t('common.loading') }}</span>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="roleStore.error" class="alert alert-danger" role="alert">
+          <i class="bi bi-exclamation-triangle"></i> {{ roleStore.error }}
+        </div>
+
         <!-- Role List -->
-        <div class="card">
+        <div v-else class="card">
           <div class="card-header">
             <div class="row align-items-center">
               <div class="col">
-                <h5 class="mb-0">Roles</h5>
+                <h5 class="mb-0">{{ $t('admin.roles') }} ({{ roleStore.totalRoles }})</h5>
               </div>
               <div class="col-auto">
                 <input
                   type="text"
                   class="form-control"
-                  placeholder="Search roles..."
+                  :placeholder="$t('admin.searchRoles')"
                   v-model="searchTerm"
                 />
               </div>
@@ -33,18 +45,22 @@
               <table class="table table-hover">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Realm ID</th>
-                    <th>Created</th>
-                    <th>Actions</th>
+                    <th>{{ $t('admin.name') }}</th>
+                    <th>{{ $t('admin.description') }}</th>
+                    <th>{{ $t('admin.realmId') }}</th>
+                    <th>{{ $t('admin.created') }}</th>
+                    <th>{{ $t('admin.actions') }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="role in filteredRoles" :key="role.id">
-                    <td>{{ role.name }}</td>
-                    <td>{{ role.description }}</td>
-                    <td>{{ role.realm_id }}</td>
+                    <td>
+                      <strong>{{ role.name }}</strong>
+                    </td>
+                    <td>{{ role.description || $t('admin.noDescription') }}</td>
+                    <td>
+                      <span class="badge bg-secondary">{{ role.realm_id }}</span>
+                    </td>
                     <td>{{ formatDate(role.created_at) }}</td>
                     <td>
                       <button class="btn btn-sm btn-outline-primary me-1" @click="editRole(role)">
@@ -61,6 +77,30 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- Pagination -->
+            <nav v-if="roleStore.totalPages > 1" aria-label="Role pagination">
+              <ul class="pagination justify-content-center">
+                <li class="page-item" :class="{ disabled: roleStore.currentPage === 1 }">
+                  <button class="page-link" @click="changePage(roleStore.currentPage - 1)" :disabled="roleStore.currentPage === 1">
+                    {{ $t('common.previous') }}
+                  </button>
+                </li>
+                <li 
+                  v-for="page in visiblePages" 
+                  :key="page" 
+                  class="page-item" 
+                  :class="{ active: page === roleStore.currentPage }"
+                >
+                  <button class="page-link" @click="changePage(page)">{{ page }}</button>
+                </li>
+                <li class="page-item" :class="{ disabled: roleStore.currentPage === roleStore.totalPages }">
+                  <button class="page-link" @click="changePage(roleStore.currentPage + 1)" :disabled="roleStore.currentPage === roleStore.totalPages">
+                    {{ $t('common.next') }}
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
@@ -71,13 +111,13 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingRole ? 'Edit Role' : 'Create Role' }}</h5>
+            <h5 class="modal-title">{{ editingRole ? $t('admin.editRole') : $t('admin.createRole') }}</h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveRole">
               <div class="mb-3">
-                <label for="name" class="form-label">Role Name</label>
+                <label for="name" class="form-label">{{ $t('admin.roleName') }}</label>
                 <input
                   type="text"
                   class="form-control"
@@ -87,30 +127,33 @@
                 />
               </div>
               <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
+                <label for="description" class="form-label">{{ $t('admin.description') }}</label>
                 <textarea
                   class="form-control"
                   id="description"
                   v-model="roleForm.description"
                   rows="3"
+                  :placeholder="$t('admin.roleDescriptionPlaceholder')"
                 ></textarea>
               </div>
               <div class="mb-3">
-                <label for="realmId" class="form-label">Realm ID</label>
+                <label for="realmName" class="form-label">{{ $t('admin.realmName') }}</label>
                 <input
                   type="text"
                   class="form-control"
-                  id="realmId"
-                  v-model="roleForm.realm_id"
+                  id="realmName"
+                  v-model="roleForm.realm_name"
                   required
+                  :disabled="!!editingRole"
                 />
+                <div v-if="editingRole" class="form-text">{{ $t('admin.realmCannotBeChanged') }}</div>
               </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="saveRole" :disabled="loading">
-              {{ loading ? 'Saving...' : 'Save' }}
+            <button type="button" class="btn btn-secondary" @click="closeModal">{{ $t('common.cancel') }}</button>
+            <button type="button" class="btn btn-primary" @click="saveRole" :disabled="roleStore.loading">
+              {{ roleStore.loading ? $t('common.saving') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -122,13 +165,13 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Manage Policies for {{ selectedRole?.name }}</h5>
+            <h5 class="modal-title">{{ $t('admin.managePoliciesFor', { roleName: selectedRole?.name }) }}</h5>
             <button type="button" class="btn-close" @click="closePolicyModal"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <h6>Available Policies</h6>
+                <h6>{{ $t('admin.availablePolicies') }}</h6>
                 <div class="list-group">
                   <div
                     v-for="policy in availablePolicies"
@@ -139,16 +182,19 @@
                     <div>
                       <strong>{{ policy.name }}</strong>
                       <br>
-                      <small class="text-muted">{{ policy.description }}</small>
+                      <small class="text-muted">{{ policy.description || $t('admin.noDescription') }}</small>
                     </div>
                     <button class="btn btn-sm btn-outline-primary">
                       <i class="bi bi-plus"></i>
                     </button>
                   </div>
+                  <div v-if="availablePolicies.length === 0" class="list-group-item text-muted text-center">
+                    {{ $t('admin.noAvailablePolicies') }}
+                  </div>
                 </div>
               </div>
               <div class="col-md-6">
-                <h6>Assigned Policies</h6>
+                <h6>{{ $t('admin.assignedPolicies') }}</h6>
                 <div class="list-group">
                   <div
                     v-for="policy in assignedPolicies"
@@ -158,18 +204,21 @@
                     <div>
                       <strong>{{ policy.name }}</strong>
                       <br>
-                      <small class="text-muted">{{ policy.description }}</small>
+                      <small class="text-muted">{{ policy.description || $t('admin.noDescription') }}</small>
                     </div>
                     <button class="btn btn-sm btn-outline-danger" @click="removePolicy(policy.id)">
                       <i class="bi bi-dash"></i>
                     </button>
+                  </div>
+                  <div v-if="assignedPolicies.length === 0" class="list-group-item text-muted text-center">
+                    {{ $t('admin.noAssignedPolicies') }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closePolicyModal">Close</button>
+            <button type="button" class="btn btn-secondary" @click="closePolicyModal">{{ $t('common.close') }}</button>
           </div>
         </div>
       </div>
@@ -182,121 +231,107 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { format } from 'date-fns';
+import { useI18n } from 'vue-i18n';
+import { useRoleStore, type Role, type CreateRoleRequest, type UpdateRoleRequest } from '@/stores/roleStore';
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  realm_id: string;
-  created_at: string;
-  updated_at: string;
-}
+const { t } = useI18n();
+const roleStore = useRoleStore();
 
-interface Policy {
-  id: string;
-  name: string;
-  description: string;
-  realm_id: string;
-}
-
-const roles = ref<Role[]>([]);
+// Local state
 const searchTerm = ref('');
 const showCreateModal = ref(false);
 const showPolicyModal = ref(false);
 const editingRole = ref<Role | null>(null);
 const selectedRole = ref<Role | null>(null);
-const availablePolicies = ref<Policy[]>([]);
-const assignedPolicies = ref<Policy[]>([]);
-const loading = ref(false);
+const availablePolicies = ref<any[]>([]);
+const assignedPolicies = ref<any[]>([]);
 
-const roleForm = ref({
+const roleForm = ref<CreateRoleRequest>({
+  realm_name: 'default',
   name: '',
   description: '',
-  realm_id: 'default',
 });
 
+// Computed
 const filteredRoles = computed(() => {
-  if (!searchTerm.value) return roles.value;
-  return roles.value.filter(role =>
-    role.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchTerm.value.toLowerCase())
-  );
+  return roleStore.searchRoles(searchTerm.value);
 });
 
+const visiblePages = computed(() => {
+  const pages = [];
+  const current = roleStore.currentPage;
+  const total = roleStore.totalPages;
+  
+  // Show up to 5 pages around current page
+  const start = Math.max(1, current - 2);
+  const end = Math.min(total, current + 2);
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  
+  return pages;
+});
+
+// Methods
 const formatDate = (dateString: string) => {
-  return format(new Date(dateString), 'MMM dd, yyyy');
+  return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
 };
 
-const loadRoles = async () => {
+const loadRoles = async (page = 1) => {
   try {
-    const response = await fetch('/api/v1/admin/roles', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
+    await roleStore.getRoles({
+      page,
+      page_size: roleStore.pagination.page_size,
     });
-    if (response.ok) {
-      roles.value = await response.json();
-    }
-  } catch (error) {
-    console.error('Failed to load roles:', error);
+  } catch (err) {
+    console.error('Failed to load roles:', err);
+  }
+};
+
+const changePage = (page: number) => {
+  if (page >= 1 && page <= roleStore.totalPages) {
+    loadRoles(page);
   }
 };
 
 const editRole = (role: Role) => {
   editingRole.value = role;
   roleForm.value = {
+    realm_name: 'default', // Cannot change realm for existing roles
     name: role.name,
     description: role.description,
-    realm_id: role.realm_id,
   };
   showCreateModal.value = true;
 };
 
 const saveRole = async () => {
-  loading.value = true;
   try {
-    const url = editingRole.value 
-      ? `/api/v1/admin/roles/${editingRole.value.id}`
-      : '/api/v1/admin/roles';
-    
-    const method = editingRole.value ? 'PUT' : 'POST';
-    
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
-      body: JSON.stringify(roleForm.value),
-    });
-
-    if (response.ok) {
-      await loadRoles();
-      closeModal();
+    if (editingRole.value) {
+      const updateData: UpdateRoleRequest = {
+        name: roleForm.value.name,
+        description: roleForm.value.description,
+      };
+      await roleStore.updateRole(editingRole.value.id, updateData);
+    } else {
+      await roleStore.createRole(roleForm.value);
     }
-  } catch (error) {
-    console.error('Failed to save role:', error);
-  } finally {
-    loading.value = false;
+    
+    await loadRoles(roleStore.currentPage);
+    closeModal();
+  } catch (err) {
+    console.error('Failed to save role:', err);
   }
 };
 
 const deleteRole = async (roleId: string) => {
-  if (!confirm('Are you sure you want to delete this role?')) return;
+  if (!confirm(t('admin.confirmDeleteRole'))) return;
   
   try {
-    const response = await fetch(`/api/v1/admin/roles/${roleId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
-    });
-    
-    if (response.ok) {
-      await loadRoles();
-    }
-  } catch (error) {
-    console.error('Failed to delete role:', error);
+    await roleStore.deleteRole(roleId);
+    await loadRoles(roleStore.currentPage);
+  } catch (err) {
+    console.error('Failed to delete role:', err);
   }
 };
 
@@ -305,48 +340,23 @@ const managePolicies = async (role: Role) => {
   showPolicyModal.value = true;
   
   // Load available policies and assigned policies
+  // Note: This would need to be implemented with policy management APIs
   try {
-    const [availableResponse, assignedResponse] = await Promise.all([
-      fetch('/api/v1/admin/policies', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      }),
-      fetch(`/api/v1/admin/roles/${role.id}/policies`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      }),
-    ]);
-
-    if (availableResponse.ok) {
-      availablePolicies.value = await availableResponse.json();
-    }
-    if (assignedResponse.ok) {
-      assignedPolicies.value = await assignedResponse.json();
-    }
+    // Placeholder for policy management - would need to implement policy APIs
+    availablePolicies.value = [];
+    assignedPolicies.value = [];
   } catch (error) {
     console.error('Failed to load policies:', error);
   }
 };
 
-const assignPolicy = async (policy: Policy) => {
+const assignPolicy = async (policy: any) => {
   if (!selectedRole.value) return;
   
   try {
-    const response = await fetch(`/api/v1/admin/roles/${selectedRole.value.id}/policies`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
-      body: JSON.stringify({ policy_id: policy.id }),
-    });
-
-    if (response.ok) {
-      assignedPolicies.value.push(policy);
-      availablePolicies.value = availablePolicies.value.filter(p => p.id !== policy.id);
-    }
+    // Placeholder for policy assignment - would need to implement policy assignment API
+    assignedPolicies.value.push(policy);
+    availablePolicies.value = availablePolicies.value.filter(p => p.id !== policy.id);
   } catch (error) {
     console.error('Failed to assign policy:', error);
   }
@@ -356,19 +366,11 @@ const removePolicy = async (policyId: string) => {
   if (!selectedRole.value) return;
   
   try {
-    const response = await fetch(`/api/v1/admin/roles/${selectedRole.value.id}/policies/${policyId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-      },
-    });
-
-    if (response.ok) {
-      const policy = assignedPolicies.value.find(p => p.id === policyId);
-      if (policy) {
-        availablePolicies.value.push(policy);
-        assignedPolicies.value = assignedPolicies.value.filter(p => p.id !== policyId);
-      }
+    // Placeholder for policy removal - would need to implement policy removal API
+    const policy = assignedPolicies.value.find(p => p.id === policyId);
+    if (policy) {
+      availablePolicies.value.push(policy);
+      assignedPolicies.value = assignedPolicies.value.filter(p => p.id !== policyId);
     }
   } catch (error) {
     console.error('Failed to remove policy:', error);
@@ -379,9 +381,9 @@ const closeModal = () => {
   showCreateModal.value = false;
   editingRole.value = null;
   roleForm.value = {
+    realm_name: 'default',
     name: '',
     description: '',
-    realm_id: 'default',
   };
 };
 
@@ -392,6 +394,7 @@ const closePolicyModal = () => {
   assignedPolicies.value = [];
 };
 
+// Lifecycle
 onMounted(() => {
   loadRoles();
 });

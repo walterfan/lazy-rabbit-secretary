@@ -65,11 +65,11 @@ func listPublishedPosts(service *PostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Parse query parameters
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 		postType := models.PostType(c.DefaultQuery("type", "post"))
 
 		// Get realm ID (could be from subdomain, header, or default)
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		// Check if user is authenticated
 		userID, isAuthenticated := auth.GetCurrentUser(c)
@@ -111,7 +111,7 @@ func getPublishedPostBySlug(service *PostService) gin.HandlerFunc {
 			return
 		}
 
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		post, err := service.GetBySlug(slug, realmID)
 		if err != nil {
@@ -166,7 +166,7 @@ func getPostsByCategory(service *PostService) gin.HandlerFunc {
 
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		result, err := service.GetByCategory(realmID, category, page, limit)
 		if err != nil {
@@ -210,7 +210,7 @@ func getPostsByTag(service *PostService) gin.HandlerFunc {
 
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		result, err := service.GetByTag(realmID, tag, page, limit)
 		if err != nil {
@@ -237,7 +237,7 @@ func searchPublishedPosts(service *PostService) gin.HandlerFunc {
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 		postType := models.PostType(c.DefaultQuery("type", "post"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		result, err := service.Search(realmID, query, models.PostStatusPublished, postType, page, limit)
 		if err != nil {
@@ -296,7 +296,7 @@ func getPostsArchive(service *PostService) gin.HandlerFunc {
 
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		// Use repository directly for archive functionality
 		posts, total, err := service.repo.GetArchive(realmID, year, month, (page-1)*limit, limit)
@@ -323,7 +323,7 @@ func getPopularPosts(service *PostService) gin.HandlerFunc {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 		days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
 		postType := models.PostType(c.DefaultQuery("type", "post"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		posts, err := service.repo.GetPopularPosts(realmID, postType, limit, days)
 		if err != nil {
@@ -343,7 +343,7 @@ func getRecentPosts(service *PostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 		postType := models.PostType(c.DefaultQuery("type", "post"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		posts, err := service.repo.GetRecentPosts(realmID, postType, limit)
 		if err != nil {
@@ -362,7 +362,7 @@ func getRecentPosts(service *PostService) gin.HandlerFunc {
 func getStickyPosts(service *PostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		postType := models.PostType(c.DefaultQuery("type", "post"))
-		realmID := getRealmID(c)
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		posts, err := service.repo.GetStickyPosts(realmID, postType)
 		if err != nil {
@@ -393,16 +393,7 @@ func createPost(service *PostService) gin.HandlerFunc {
 
 		// Get user ID from auth context
 		userID, _ := auth.GetCurrentUser(c)
-
-		// Determine realm ID based on post status and type
-		var realmID string
-		if req.Status == "published" && req.Type == "post" {
-			// Public posts use PUBLIC_REALM_ID
-			realmID = models.PUBLIC_REALM_ID
-		} else {
-			// Private posts (drafts, pages, etc.) use realm from auth context
-			realmID, _ = auth.GetCurrentRealm(c)
-		}
+		realmID, _ := auth.GetCurrentRealm(c)
 
 		post, err := service.CreateFromInput(&req, realmID, userID)
 		if err != nil {
@@ -746,17 +737,4 @@ func getPostsByAuthor(service *PostService) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, result)
 	}
-}
-
-// Helper functions
-
-func getRealmID(c *gin.Context) string {
-	// For authenticated routes, get realm ID from auth context
-	if realmID, exists := auth.GetCurrentRealm(c); exists {
-		return realmID
-	}
-
-	// For public blog routes, return empty string to indicate "any realm"
-	// This will be handled in the repository layer
-	return models.PUBLIC_REALM_ID
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,15 +12,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/auth"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/book"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/bookmark"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/command"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/daily"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/diagram"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/image"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/inbox"
+	"github.com/walterfan/lazy-rabbit-secretary/internal/news"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/post"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/prompt"
 	"github.com/walterfan/lazy-rabbit-secretary/internal/reminder"
@@ -53,28 +56,16 @@ func (w *responseWriter) WriteString(s string) (int, error) {
 	return w.ResponseWriter.WriteString(s)
 }
 
-type CommandResponse struct {
-	Name string `json:"name"`
-	Desc string `json:"desc"`
-}
-
-type NewsItem struct {
-	Message   string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
-}
-
 // WebApiService holds necessary dependencies for the web service
 type WebApiService struct {
 	logger      *zap.Logger
-	redisClient *redis.Client
 	authService *auth.AuthService
 }
 
 // NewWebApiService creates a new instance of WebApiService with the required dependencies.
-func NewWebApiService(logger *zap.Logger, redisClient *redis.Client, authService *auth.AuthService) *WebApiService {
+func NewWebApiService(logger *zap.Logger, authService *auth.AuthService) *WebApiService {
 	return &WebApiService{
 		logger:      logger,
-		redisClient: redisClient,
 		authService: authService,
 	}
 }
@@ -104,85 +95,12 @@ func (thiz *WebApiService) Run() {
 	})
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.GET("/api/v1/news", func(c *gin.Context) {
-		ctx := context.Background()
-		newsKey := "news:latest"
-
-		if thiz.redisClient == nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Redis client not initialized",
-			})
-			return
-		}
-
-		// Fetch all items sorted by timestamp desc
-		items, err := thiz.redisClient.ZRevRangeWithScores(ctx, newsKey, 0, -1).Result()
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to fetch news",
-			})
-			return
-		}
-
-		var newsList []NewsItem
-		for _, item := range items {
-			newsList = append(newsList, NewsItem{
-				Message:   item.Member.(string),
-				Timestamp: int64(item.Score),
-			})
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"news": newsList,
-		})
-	})
-
-	r.GET("/api/v1/commands", func(ctx *gin.Context) {
-		var commands []CommandResponse
-		if err := viper.UnmarshalKey("commands", &commands); err != nil {
-			thiz.logger.Error("Failed to unmarshal commands from config",
-				zap.Error(err),
-			)
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load commands"})
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"commands": commands})
-	})
-
-	r.POST("/api/v1/commands", func(c *gin.Context) {
-		type CommandRequest struct {
-			Name       string `json:"name"`
-			Parameters string `json:"parameters"`
-		}
-
-		var req CommandRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid request body",
-			})
-			return
-		}
-
-		handler, exists := commandHandlers[req.Name]
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-				"error": fmt.Sprintf("Command '%s' not found", req.Name),
-			})
-			return
-		}
-
-		result, err := handler(req.Parameters)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"result": result,
-		})
-	})
+	// Register news routes
+	newsRepo := news.NewNewsRepository(database.GetDB())
+	newsService := news.NewNewsService(newsRepo)
+	newsHandler := news.NewNewsHandler(newsService)
+	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
+	newsHandler.RegisterRoutes(r.Group("/api/v1"), authMiddleware)
 
 	// Register auth routes
 	thiz.setupAuthRoutes(r)
@@ -190,7 +108,6 @@ func (thiz *WebApiService) Run() {
 	// Register secret routes
 	repo := secret.NewSecretRepository()
 	secretService := secret.NewSecretService(repo)
-	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
 	secret.RegisterRoutes(r, secretService, authMiddleware)
 
 	// Register reminder routes first (needed by task service)
@@ -205,11 +122,15 @@ func (thiz *WebApiService) Run() {
 
 	// Register prompt routes
 	promptRoutes := prompt.NewPromptRoutes(database.GetDB())
-	promptRoutes.RegisterRoutes(r)
+	promptRoutes.RegisterRoutes(r, authMiddleware)
 
 	bookRepo := book.NewBookRepository()
 	bookService := book.NewBookService(bookRepo)
 	book.RegisterRoutes(r, bookService, authMiddleware)
+
+	// Register bookmark routes
+	bookmarkService := bookmark.NewBookmarkService(database.GetDB())
+	bookmark.RegisterRoutes(r, bookmarkService, authMiddleware)
 
 	// Register post routes
 	postService := post.NewPostService(database.GetDB())
@@ -218,6 +139,18 @@ func (thiz *WebApiService) Run() {
 	// Register wiki routes
 	wikiService := wiki.NewWikiService(database.GetDB())
 	wiki.RegisterRoutes(r, wikiService, authMiddleware)
+
+	// Register diagram routes
+	diagramService := diagram.NewDiagramService(database.GetDB())
+	diagram.RegisterRoutes(r, diagramService, authMiddleware)
+
+	// Register image routes
+	imageService := image.NewImageService(database.GetDB(), viper.GetString("server.upload_dir"))
+	image.RegisterRoutes(r, imageService, authMiddleware)
+
+	// Register command routes
+	commandService := command.NewCommandService(thiz.logger)
+	command.RegisterRoutes(r, commandService, authMiddleware)
 
 	// Register GTD system routes
 	inboxService := inbox.NewInboxService(database.GetDB())
@@ -235,8 +168,6 @@ func (thiz *WebApiService) Run() {
 	thiz.setupPublicRoutes(r)
 
 	thiz.setupPrivateRoutes(r)
-
-	thiz.setupCommands(r)
 
 	// Run the server
 	thiz.startServer(r)
@@ -500,18 +431,17 @@ func (thiz *WebApiService) setupPrivateRoutes(r *gin.Engine) {
 	}
 }
 
-func (thiz *WebApiService) setupCommands(r *gin.Engine) {
-
-	RegisterCommandHandler("read_over_ssh", ReadOverSSH)
-}
-
 func (thiz *WebApiService) setupAuthRoutes(r *gin.Engine) {
 	// Create auth handlers and middleware
 	authHandlers := auth.NewAuthHandlers(thiz.authService)
 	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
+	userHandlers := auth.NewUserHandlers(thiz.authService)
+	roleHandlers := auth.NewRoleHandlers(thiz.authService)
+	policyHandlers := auth.NewPolicyHandlers(thiz.authService)
+	realmHandlers := auth.NewRealmHandlers(thiz.authService)
 
 	// Register auth routes
-	auth.RegisterRoutes(r, authHandlers, authMiddleware)
+	auth.RegisterRoutes(r, authHandlers, userHandlers, roleHandlers, policyHandlers, realmHandlers, authMiddleware)
 
 	thiz.logger.Info("Registered authentication routes")
 }

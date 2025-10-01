@@ -14,8 +14,8 @@
                 <i class="bi bi-arrow-down"></i>
                 Start Reading
               </button>
-              <router-link to="/blog/about" class="btn btn-outline-light btn-lg">
-                About Me
+              <router-link to="/posts" class="btn btn-outline-light btn-lg">
+                Start Writing
               </router-link>
             </div>
           </div>
@@ -106,6 +106,7 @@
               :show-status="false"
               :show-load-more="true"
               :show-view-toggle="true"
+              :default-view-mode="'list'"
               :empty-message="getEmptyMessage()"
               :empty-description="getEmptyDescription()"
               @category-click="handleCategoryClick"
@@ -339,7 +340,7 @@ const searchQuery = ref('')
 const selectedCategory = ref('')
 
 // Mock data for sidebar (in real app, these would come from API)
-const categories = ref(['Technology', 'Web Development', 'Vue.js', 'JavaScript', 'Tutorial'])
+const categories = ref(['Technology', 'Work', 'Life', 'Learn', 'Media'])
 const tags = ref(['vue', 'javascript', 'typescript', 'nodejs', 'api', 'frontend', 'backend'])
 const archiveMonths = ref([
   { label: 'December 2024', link: '/blog/archive/2024/12', count: 5 },

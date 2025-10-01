@@ -85,32 +85,47 @@ func (s *SecretService) CreateFromInput(req CreateSecretRequest, realmID, create
 	// Combine wrap parts into a single field (since model has only WrappedDEK)
 	combinedWrapped := append(append(wrapNonce, wrappedDEK...), wrapTag...)
 
+	// Create the main secret record
 	secret := &models.Secret{
+		ID:              uuid.NewString(),
+		RealmID:         realmID,
+		Name:            req.Name,
+		Group:           req.Group,
+		Desc:            req.Desc,
+		Path:            req.Path,
+		CurrentVersion:  1,
+		PreviousVersion: 0,
+		PendingVersion:  0,
+		MaxVersion:      1,
+		CreatedBy:       createdBy,
+		CreatedAt:       time.Now(),
+		UpdatedBy:       createdBy,
+		UpdatedAt:       time.Now(),
+	}
+
+	// Create the first version record
+	secretVersion := &models.SecretVersion{
 		ID:         uuid.NewString(),
-		RealmID:    realmID,
-		Name:       req.Name,
-		Group:      req.Group,
-		Desc:       req.Desc,
-		Path:       req.Path,
+		SecretID:   secret.ID,
+		Version:    1,
 		CipherAlg:  "aes-256-gcm",
 		CipherText: base64.StdEncoding.EncodeToString(ciphertext),
 		Nonce:      base64.StdEncoding.EncodeToString(dataNonce),
 		AuthTag:    base64.StdEncoding.EncodeToString(dataTag),
 		WrappedDEK: base64.StdEncoding.EncodeToString(combinedWrapped),
 		KEKVersion: kekVersion,
+		Status:     "active",
 		CreatedBy:  createdBy,
 		CreatedAt:  time.Now(),
-		UpdatedBy:  createdBy,
-		UpdatedAt:  time.Now(),
 	}
 
-	if err := s.repo.Create(secret); err != nil {
+	if err := s.repo.CreateWithVersion(secret, secretVersion); err != nil {
 		return nil, err
 	}
 	return secret, nil
 }
 
-// UpdateFromInput updates an existing secret with new data and re-encryption
+// UpdateFromInput updates an existing secret with new data and re-encryption, creating a new version
 func (s *SecretService) UpdateFromInput(id string, req UpdateSecretRequest, updatedBy string) (*models.Secret, error) {
 	if strings.TrimSpace(id) == "" || strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Path) == "" || strings.TrimSpace(req.Group) == "" {
 		return nil, errors.New("id, name, group, path are required")
@@ -164,21 +179,35 @@ func (s *SecretService) UpdateFromInput(id string, req UpdateSecretRequest, upda
 	// Combine wrap parts into a single field (since model has only WrappedDEK)
 	combinedWrapped := append(append(wrapNonce, wrappedDEK...), wrapTag...)
 
-	// Update the secret with new data
+	// Create new version
+	newVersion := existing.MaxVersion + 1
+	secretVersion := &models.SecretVersion{
+		ID:         uuid.NewString(),
+		SecretID:   existing.ID,
+		Version:    newVersion,
+		CipherAlg:  "aes-256-gcm",
+		CipherText: base64.StdEncoding.EncodeToString(ciphertext),
+		Nonce:      base64.StdEncoding.EncodeToString(dataNonce),
+		AuthTag:    base64.StdEncoding.EncodeToString(dataTag),
+		WrappedDEK: base64.StdEncoding.EncodeToString(combinedWrapped),
+		KEKVersion: kekVersion,
+		Status:     "active",
+		CreatedBy:  updatedBy,
+		CreatedAt:  time.Now(),
+	}
+
+	// Update the secret metadata and version pointers
 	existing.Name = req.Name
 	existing.Group = req.Group
 	existing.Desc = req.Desc
 	existing.Path = req.Path
-	existing.CipherAlg = "aes-256-gcm"
-	existing.CipherText = base64.StdEncoding.EncodeToString(ciphertext)
-	existing.Nonce = base64.StdEncoding.EncodeToString(dataNonce)
-	existing.AuthTag = base64.StdEncoding.EncodeToString(dataTag)
-	existing.WrappedDEK = base64.StdEncoding.EncodeToString(combinedWrapped)
-	existing.KEKVersion = kekVersion
+	existing.PreviousVersion = existing.CurrentVersion
+	existing.CurrentVersion = newVersion
+	existing.MaxVersion = newVersion
 	existing.UpdatedBy = updatedBy
 	existing.UpdatedAt = time.Now()
 
-	if err := s.repo.Update(existing); err != nil {
+	if err := s.repo.UpdateWithNewVersion(existing, secretVersion); err != nil {
 		return nil, err
 	}
 	return existing, nil
@@ -217,36 +246,53 @@ func (s *SecretService) SearchSecrets(realmID, query, group, path string, page, 
 	return s.repo.Search(realmID, query, group, path, page, pageSize)
 }
 
-// DecryptSecret decrypts a secret and returns the plaintext value
+// DecryptSecret decrypts a secret and returns the plaintext value from the current version
 func (s *SecretService) DecryptSecret(id string) (string, error) {
+	return s.DecryptSecretVersion(id, 0) // 0 means current version
+}
+
+// DecryptSecretVersion decrypts a specific version of a secret (0 = current version)
+func (s *SecretService) DecryptSecretVersion(id string, version int) (string, error) {
 	secret, err := s.repo.GetByID(id)
 	if err != nil {
 		return "", fmt.Errorf("failed to get secret: %w", err)
 	}
 
-	// Load KEK from environment
-	kek, _, err := loadKEKFromEnv()
+	// Determine which version to decrypt
+	targetVersion := version
+	if version == 0 {
+		targetVersion = secret.CurrentVersion
+	}
+
+	// Get the secret version
+	secretVersion, err := s.repo.GetSecretVersion(id, targetVersion)
+	if err != nil {
+		return "", fmt.Errorf("failed to get secret version %d: %w", targetVersion, err)
+	}
+
+	// Load KEK from environment based on the version's KEK version
+	kek, err := s.loadKEKByVersion(secretVersion.KEKVersion)
 	if err != nil {
 		return "", fmt.Errorf("failed to load KEK: %w", err)
 	}
 
 	// Decode base64 fields
-	ciphertext, err := base64.StdEncoding.DecodeString(secret.CipherText)
+	ciphertext, err := base64.StdEncoding.DecodeString(secretVersion.CipherText)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode ciphertext: %w", err)
 	}
 
-	nonce, err := base64.StdEncoding.DecodeString(secret.Nonce)
+	nonce, err := base64.StdEncoding.DecodeString(secretVersion.Nonce)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode nonce: %w", err)
 	}
 
-	authTag, err := base64.StdEncoding.DecodeString(secret.AuthTag)
+	authTag, err := base64.StdEncoding.DecodeString(secretVersion.AuthTag)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode auth tag: %w", err)
 	}
 
-	wrappedDEK, err := base64.StdEncoding.DecodeString(secret.WrappedDEK)
+	wrappedDEK, err := base64.StdEncoding.DecodeString(secretVersion.WrappedDEK)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode wrapped DEK: %w", err)
 	}
@@ -282,9 +328,26 @@ func (s *SecretService) DecryptSecret(id string) (string, error) {
 
 // DecryptSecretWithKEK decrypts a secret using a custom KEK provided by the user
 func (s *SecretService) DecryptSecretWithKEK(id, customKEK string) (string, error) {
+	return s.DecryptSecretVersionWithKEK(id, 0, customKEK) // 0 means current version
+}
+
+// DecryptSecretVersionWithKEK decrypts a specific version using a custom KEK
+func (s *SecretService) DecryptSecretVersionWithKEK(id string, version int, customKEK string) (string, error) {
 	secret, err := s.repo.GetByID(id)
 	if err != nil {
 		return "", fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	// Determine which version to decrypt
+	targetVersion := version
+	if version == 0 {
+		targetVersion = secret.CurrentVersion
+	}
+
+	// Get the secret version
+	secretVersion, err := s.repo.GetSecretVersion(id, targetVersion)
+	if err != nil {
+		return "", fmt.Errorf("failed to get secret version %d: %w", targetVersion, err)
 	}
 
 	// Hash the custom KEK to 32 bytes using SHA-256
@@ -292,22 +355,22 @@ func (s *SecretService) DecryptSecretWithKEK(id, customKEK string) (string, erro
 	kek := hash[:]
 
 	// Decode base64 fields
-	ciphertext, err := base64.StdEncoding.DecodeString(secret.CipherText)
+	ciphertext, err := base64.StdEncoding.DecodeString(secretVersion.CipherText)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode ciphertext: %w", err)
 	}
 
-	nonce, err := base64.StdEncoding.DecodeString(secret.Nonce)
+	nonce, err := base64.StdEncoding.DecodeString(secretVersion.Nonce)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode nonce: %w", err)
 	}
 
-	authTag, err := base64.StdEncoding.DecodeString(secret.AuthTag)
+	authTag, err := base64.StdEncoding.DecodeString(secretVersion.AuthTag)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode auth tag: %w", err)
 	}
 
-	wrappedDEK, err := base64.StdEncoding.DecodeString(secret.WrappedDEK)
+	wrappedDEK, err := base64.StdEncoding.DecodeString(secretVersion.WrappedDEK)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode wrapped DEK: %w", err)
 	}
@@ -341,30 +404,158 @@ func (s *SecretService) DecryptSecretWithKEK(id, customKEK string) (string, erro
 	return string(plaintext), nil
 }
 
+// GetSecretVersions returns all versions of a secret
+func (s *SecretService) GetSecretVersions(id string) ([]models.SecretVersion, error) {
+	return s.repo.GetSecretVersions(id)
+}
+
+// ActivateSecretVersion activates a specific version as the current version
+func (s *SecretService) ActivateSecretVersion(id string, version int, updatedBy string) error {
+	secret, err := s.repo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	// Verify the version exists
+	_, err = s.repo.GetSecretVersion(id, version)
+	if err != nil {
+		return fmt.Errorf("version %d does not exist: %w", version, err)
+	}
+
+	// Update version pointers
+	secret.PreviousVersion = secret.CurrentVersion
+	secret.CurrentVersion = version
+	secret.UpdatedBy = updatedBy
+	secret.UpdatedAt = time.Now()
+
+	return s.repo.Update(secret)
+}
+
+// DeleteSecretVersion marks a specific version as deleted (soft delete)
+func (s *SecretService) DeleteSecretVersion(id string, version int) error {
+	secret, err := s.repo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	// Prevent deletion of current version
+	if version == secret.CurrentVersion {
+		return errors.New("cannot delete the current active version")
+	}
+
+	return s.repo.DeleteSecretVersion(id, version)
+}
+
+// CreatePendingVersion creates a new version in pending status
+func (s *SecretService) CreatePendingVersion(id string, value string, kek string, createdBy string) (*models.SecretVersion, error) {
+	secret, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secret: %w", err)
+	}
+
+	// Validate custom KEK if provided
+	var kekBytes []byte
+	var kekVersion int
+
+	if strings.TrimSpace(kek) != "" {
+		// Use custom KEK - hash it to 32 bytes using SHA-256
+		hash := sha256.Sum256([]byte(kek))
+		kekBytes = hash[:]
+		kekVersion = 999 // Use a special version for custom KEKs
+	} else {
+		// Use environment KEK
+		var err error
+		kekBytes, kekVersion, err = loadKEKFromEnv()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Envelope encryption: encrypt value with random DEK, then wrap DEK with KEK
+	dek := generateRandomBytes(32)
+	ciphertext, dataNonce, dataTag, err := encryptAESGCM(dek, []byte(value))
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
+	}
+
+	wrappedDEK, wrapNonce, wrapTag, err := encryptAESGCM(kekBytes, dek)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap DEK: %w", err)
+	}
+
+	// Combine wrap parts into a single field
+	combinedWrapped := append(append(wrapNonce, wrappedDEK...), wrapTag...)
+
+	// Create new pending version
+	newVersion := secret.MaxVersion + 1
+	secretVersion := &models.SecretVersion{
+		ID:         uuid.NewString(),
+		SecretID:   secret.ID,
+		Version:    newVersion,
+		CipherAlg:  "aes-256-gcm",
+		CipherText: base64.StdEncoding.EncodeToString(ciphertext),
+		Nonce:      base64.StdEncoding.EncodeToString(dataNonce),
+		AuthTag:    base64.StdEncoding.EncodeToString(dataTag),
+		WrappedDEK: base64.StdEncoding.EncodeToString(combinedWrapped),
+		KEKVersion: kekVersion,
+		Status:     "pending",
+		CreatedBy:  createdBy,
+		CreatedAt:  time.Now(),
+	}
+
+	// Update max version and pending version pointer
+	secret.MaxVersion = newVersion
+	secret.PendingVersion = newVersion
+	secret.UpdatedBy = createdBy
+	secret.UpdatedAt = time.Now()
+
+	if err := s.repo.CreateVersionWithUpdate(secret, secretVersion); err != nil {
+		return nil, err
+	}
+
+	return secretVersion, nil
+}
+
 // --- helpers ---
 
 func loadKEKFromEnv() ([]byte, int, error) {
 	kekVersion := parseKEKVersion()
+	kek, err := loadKEKByVersionInt(kekVersion)
+	return kek, kekVersion, err
+}
+
+// loadKEKByVersion loads a KEK by its version number
+func (s *SecretService) loadKEKByVersion(kekVersion int) ([]byte, error) {
+	kek, err := loadKEKByVersionInt(kekVersion)
+	return kek, err
+}
+
+func loadKEKByVersionInt(kekVersion int) ([]byte, error) {
+	// Handle custom KEK version
+	if kekVersion == 999 {
+		return nil, errors.New("custom KEK version 999 requires explicit KEK parameter")
+	}
+
 	// Prefer base64-encoded KEK
 	if b64 := os.Getenv("KEK_BASE64_" + strconv.Itoa(kekVersion)); b64 != "" {
 		key, err := base64.StdEncoding.DecodeString(b64)
 		if err != nil {
-			return nil, 0, fmt.Errorf("invalid KEK_BASE64: %w", err)
+			return nil, fmt.Errorf("invalid KEK_BASE64_%d: %w", kekVersion, err)
 		}
 		if len(key) != 32 {
-			return nil, 0, fmt.Errorf("KEK must be 32 bytes for AES-256-GCM, got %d", len(key))
+			return nil, fmt.Errorf("KEK_%d must be 32 bytes for AES-256-GCM, got %d", kekVersion, len(key))
 		}
-		return key, kekVersion, nil
+		return key, nil
 	}
 	// Fallback: raw key in KEK (must be 32 bytes)
 	if raw := os.Getenv("KEK_" + strconv.Itoa(kekVersion)); raw != "" {
 		key := []byte(raw)
 		if len(key) != 32 {
-			return nil, 0, fmt.Errorf("KEK must be 32 bytes for AES-256-GCM, got %d", len(key))
+			return nil, fmt.Errorf("KEK_%d must be 32 bytes for AES-256-GCM, got %d", kekVersion, len(key))
 		}
-		return key, kekVersion, nil
+		return key, nil
 	}
-	return nil, 0, errors.New("KEK not configured; set KEK_BASE64 or KEK")
+	return nil, fmt.Errorf("KEK_%d not configured; set KEK_BASE64_%d or KEK_%d", kekVersion, kekVersion, kekVersion)
 }
 
 func parseKEKVersion() int {

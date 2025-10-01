@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { Prompt, CreatePromptRequest, UpdatePromptRequest, PromptListResponse } from '@/types';
 import { handleHttpError, showErrorAlert, logError } from '@/utils/errorHandler';
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
+import { getApiUrl } from '@/utils/apiConfig';
 
 export const usePromptStore = defineStore('prompt', () => {
   const prompts = ref<Prompt[]>([]);
@@ -26,7 +27,7 @@ export const usePromptStore = defineStore('prompt', () => {
       queryParams.append('page', (params.page || currentPage.value).toString());
       queryParams.append('limit', (params.page_size || pageSize.value).toString());
       
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts?${queryParams}`);
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts?${queryParams}`));
       
       if (!response.ok) {
         const apiError = await handleHttpError(response);
@@ -68,7 +69,7 @@ export const usePromptStore = defineStore('prompt', () => {
       queryParams.append('page', (params.page || currentPage.value).toString());
       queryParams.append('limit', (params.page_size || pageSize.value).toString());
       
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts/search?${queryParams}`);
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts/search?${queryParams}`));
       
       if (!response.ok) {
         const apiError = await handleHttpError(response);
@@ -110,7 +111,7 @@ export const usePromptStore = defineStore('prompt', () => {
       queryParams.append('limit', (params.page_size || pageSize.value).toString());
       
       const tagsParam = tags.join(',');
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts/tags/${encodeURIComponent(tagsParam)}?${queryParams}`);
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts/tags/${encodeURIComponent(tagsParam)}?${queryParams}`));
       
       if (!response.ok) {
         const apiError = await handleHttpError(response);
@@ -144,8 +145,8 @@ export const usePromptStore = defineStore('prompt', () => {
     error.value = null;
     
     try {
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts/${id}`);
-      
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts/${id}`));
+
       if (!response.ok) {
         const apiError = await handleHttpError(response);
         logError(apiError, 'getPrompt');
@@ -183,7 +184,7 @@ export const usePromptStore = defineStore('prompt', () => {
         tags: prompt.tags
       };
       
-      const response = await makeAuthenticatedRequest('/api/v1/prompts', {
+      const response = await makeAuthenticatedRequest(getApiUrl('/api/v1/prompts'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -232,7 +233,7 @@ export const usePromptStore = defineStore('prompt', () => {
       if (updates.user_prompt !== undefined) requestData.user_prompt = updates.user_prompt;
       if (updates.tags !== undefined) requestData.tags = updates.tags;
       
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts/${id}`, {
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts/${id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -275,7 +276,7 @@ export const usePromptStore = defineStore('prompt', () => {
     error.value = null;
     
     try {
-      const response = await makeAuthenticatedRequest(`/api/v1/prompts/${id}`, {
+      const response = await makeAuthenticatedRequest(getApiUrl(`/api/v1/prompts/${id}`), {
         method: 'DELETE'
       });
       

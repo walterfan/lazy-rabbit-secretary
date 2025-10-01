@@ -77,7 +77,7 @@
             </div>
           </div>
           <div class="col-md-4 text-end">
-            <WikiPageActions 
+            <WikiPageActions
               :page="page"
               :canEdit="page.can_edit"
               :canDelete="page.can_delete"

@@ -23,11 +23,11 @@ type Book struct {
 	// ensure book tags are deleted if the book is deleted
 	Tags []BookTag `json:"tags" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
-	CreatedBy   string         `json:"created_by" gorm:"type:text"`
-	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedBy string         `json:"created_by" gorm:"type:text"`
+	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedBy string         `json:"updated_by" gorm:"type:text"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // BookTag represents a tag for a book
@@ -36,9 +36,9 @@ type BookTag struct {
 	BookID string `json:"book_id" gorm:"not null;type:text;index"`
 	Name   string `json:"name" gorm:"not null;type:text;index"`
 
-	CreatedBy   string         `json:"created_by" gorm:"type:text"`
-	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
-	UpdatedTime time.Time      `json:"updated_time" gorm:"autoUpdateTime"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedBy string         `json:"created_by" gorm:"type:text"`
+	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedBy string         `json:"updated_by" gorm:"type:text"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }

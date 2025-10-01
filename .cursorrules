@@ -1,0 +1,278 @@
+# Lazy Rabbit Secretary - Cursor Rules
+
+## Project Overview
+This is a full-stack application with a Go backend (Gin framework) and Vue.js frontend (Vue 3 + TypeScript). The project includes diagram generation, image management, wiki system, and GTD functionality.
+
+## Backend (Go) Guidelines
+
+### Architecture
+- Follow clean architecture with repository, service, and routes layers
+- Use GORM for database operations
+- Use Gin for HTTP routing
+- Use structured logging with zap
+- Use JWT for authentication
+
+### Code Style
+- Use camelCase for variables and functions
+- Use PascalCase for exported types and functions
+- Use snake_case for database fields and JSON tags
+- Always handle errors explicitly
+- Use context for request-scoped data
+- Use dependency injection for services
+
+### Database
+- Use GORM models in `internal/models/`
+- Always include audit fields (CreatedAt, UpdatedAt, DeletedAt)
+- Use soft deletes with `gorm.DeletedAt`
+- Use UUIDs for primary keys
+- Use proper indexes for performance
+
+### API Design
+- Use RESTful endpoints with proper HTTP methods
+- Return consistent JSON responses with `{"data": {...}}` wrapper
+- Use proper HTTP status codes
+- Include pagination for list endpoints
+- Use middleware for authentication and authorization
+
+### Error Handling
+- Use structured error responses
+- Log errors with context
+- Return appropriate HTTP status codes
+- Use custom error types for business logic errors
+
+### Security
+- Validate all input data
+- Use parameterized queries
+- Implement proper authentication middleware
+- Use HTTPS in production
+- Sanitize user inputs
+
+## Frontend (Vue.js) Guidelines
+
+### Architecture
+- Use Vue 3 Composition API
+- Use Pinia for state management
+- Use Vue Router for navigation
+- Use TypeScript for type safety
+- Use Bootstrap for styling
+
+### Code Style
+- Use camelCase for variables and functions
+- Use PascalCase for components
+- Use kebab-case for component files
+- Use TypeScript interfaces for type definitions
+- Use async/await for API calls
+
+### State Management
+- Use Pinia stores for global state
+- Keep stores focused and single-purpose
+- Use computed properties for derived state
+- Use reactive refs for local component state
+
+### API Integration
+- Use Axios for HTTP requests
+- Handle errors gracefully
+- Use loading states for better UX
+- Implement proper error boundaries
+
+### Internationalization
+- Use Vue I18n for translations
+- Keep translation keys consistent
+- Use interpolation for dynamic content
+- Maintain both English and Chinese translations
+
+## File Organization
+
+### Backend Structure
+```
+backend/
+├── cmd/                 # Application entry points
+├── internal/           # Private application code
+│   ├── api/           # API route registration
+│   ├── auth/          # Authentication and authorization
+│   ├── models/        # Database models
+│   ├── {feature}/     # Feature-specific code
+│   │   ├── {feature}_repository.go
+│   │   ├── {feature}_service.go
+│   │   └── {feature}_routes.go
+│   └── ...
+├── pkg/               # Public library code
+├── config/            # Configuration files
+└── data/              # Static data files
+```
+
+### Frontend Structure
+```
+frontend/
+├── src/
+│   ├── components/    # Reusable components
+│   ├── views/         # Page components
+│   ├── stores/        # Pinia stores
+│   ├── services/      # API services (deprecated, use stores)
+│   ├── types/         # TypeScript type definitions
+│   ├── utils/         # Utility functions
+│   ├── locales/       # Translation files
+│   └── router/        # Vue Router configuration
+```
+
+## Development Workflow
+
+### Git
+- Use conventional commits
+- Create feature branches
+- Use pull requests for code review
+- Keep commits atomic and focused
+
+### Testing
+- Write unit tests for business logic
+- Use integration tests for API endpoints
+- Test error scenarios
+- Maintain good test coverage
+
+### Documentation
+- Document API endpoints
+- Use clear variable and function names
+- Add comments for complex logic
+- Keep README files updated
+
+## Specific Patterns
+
+### Image Processing
+- Use `pkg/util/image_util.go` for image operations
+- Always handle image format validation
+- Use proper error handling for file operations
+- Implement thumbnail generation for performance
+
+### Diagram Generation
+- Support multiple diagram types (PlantUML, Mermaid, Graphviz)
+- Use environment variables for external services
+- Implement proper error handling for generation failures
+- Cache generated diagrams when possible
+
+### Authentication
+- Use JWT tokens for stateless authentication
+- Implement proper token validation
+- Use middleware for route protection
+- Support optional authentication for public routes
+
+### Database Operations
+- Use transactions for multi-step operations
+- Implement proper pagination
+- Use indexes for performance
+- Handle NULL values properly
+
+## Common Issues to Avoid
+
+### Backend
+- Don't ignore errors
+- Don't use global variables
+- Don't hardcode configuration values
+- Don't expose sensitive information in logs
+- Don't use string concatenation for SQL queries
+
+### Frontend
+- Don't mutate props directly
+- Don't use `any` type unnecessarily
+- Don't forget to handle loading states
+- Don't ignore TypeScript errors
+- Don't use inline styles for complex styling
+
+## Performance Considerations
+
+### Backend
+- Use database indexes
+- Implement proper caching
+- Use connection pooling
+- Optimize database queries
+- Use compression for large responses
+
+### Frontend
+- Use lazy loading for routes
+- Implement proper image optimization
+- Use virtual scrolling for large lists
+- Minimize bundle size
+- Use proper caching strategies
+
+## Security Best Practices
+
+### Backend
+- Validate all inputs
+- Use parameterized queries
+- Implement rate limiting
+- Use HTTPS
+- Sanitize file uploads
+- Implement proper CORS
+
+### Frontend
+- Sanitize user inputs
+- Use HTTPS
+- Implement proper error handling
+- Don't expose sensitive data
+- Use proper authentication flows
+
+## Environment Configuration
+
+### Backend
+- Use environment variables for configuration
+- Use different configs for different environments
+- Don't commit sensitive data
+- Use proper logging levels
+
+### Frontend
+- Use environment variables for API URLs
+- Use different builds for different environments
+- Don't expose API keys in frontend code
+- Use proper build optimization
+
+## Code Review Checklist
+
+### Backend
+- [ ] Proper error handling
+- [ ] Input validation
+- [ ] Security considerations
+- [ ] Performance implications
+- [ ] Test coverage
+- [ ] Documentation
+
+### Frontend
+- [ ] TypeScript compliance
+- [ ] Component reusability
+- [ ] State management
+- [ ] Error handling
+- [ ] Performance considerations
+- [ ] Accessibility
+
+## Tools and Dependencies
+
+### Backend
+- Go 1.21+
+- Gin framework
+- GORM
+- JWT
+- Zap logging
+- Viper configuration
+
+### Frontend
+- Vue 3
+- TypeScript
+- Pinia
+- Vue Router
+- Axios
+- Bootstrap
+- Vue I18n
+
+## Getting Started
+
+1. Clone the repository
+2. Set up the backend environment
+3. Install Go dependencies
+4. Set up the database
+5. Configure environment variables
+6. Start the backend server
+7. Set up the frontend environment
+8. Install Node.js dependencies
+9. Start the frontend development server
+
+## Support
+
+For questions or issues, please refer to the project documentation or create an issue in the repository.

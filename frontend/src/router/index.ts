@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import BooksView from '@/views/BooksView.vue';
+import BookmarksView from '@/views/BookmarksView.vue';
 import TasksView from '@/views/TasksView.vue';
 import RemindersView from '@/views/RemindersView.vue';
 import SecretsView from '@/views/SecretsView.vue';
@@ -11,11 +12,15 @@ import HelpView from '@/views/HelpView.vue';
 import CommandsView from '@/views/CommandsView.vue';
 import EncodingToolsView from '@/views/EncodingToolsView.vue';
 import PromptsView from '@/views/PromptsView.vue';
+import AiAssistantView from '@/views/AiAssistantView.vue';
 import ProfileView from '@/views/ProfileView.vue';
 import GTDView from '@/views/GTDView.vue';
 import WikiView from '@/views/WikiView.vue';
 import WikiPageView from '@/views/WikiPageView.vue';
 import WikiEditView from '@/views/WikiEditView.vue';
+import DiagramView from '@/views/DiagramView.vue';
+import DiagramManagementView from '@/views/DiagramManagementView.vue';
+import ImageView from '@/views/ImageView.vue';
 import SignInView from '@/views/SignInView.vue';
 import SignUpView from '@/views/SignUpView.vue';
 import UserManagementView from '@/views/admin/UserManagementView.vue';
@@ -51,6 +56,30 @@ const router = createRouter({
       path: '/tools/encoding',
       name: 'encoding-tools',
       component: EncodingToolsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tools/diagram',
+      name: 'diagram',
+      component: DiagramView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tools/diagram-management',
+      name: 'diagram-management',
+      component: DiagramManagementView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tools/images',
+      name: 'images',
+      component: ImageView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/ai-assistant',
+      name: 'ai-assistant',
+      component: AiAssistantView,
       meta: { requiresAuth: true }
     },
     {
@@ -95,6 +124,12 @@ const router = createRouter({
       path: '/books',
       name: 'books',
       component: BooksView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/bookmarks',
+      name: 'bookmarks',
+      component: BookmarksView,
       meta: { requiresAuth: true }
     },
     {

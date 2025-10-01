@@ -26,8 +26,8 @@
     <div class="container">
       <div class="row">
         <!-- Sidebar -->
-        <div class="col-lg-3">
-          <WikiSidebar 
+        <div class="col-lg-2">
+          <WikiSidebar
             :categories="categories"
             :tags="tags"
             :recentPages="recentPages"
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Main Content Area -->
-        <div class="col-lg-9">
+        <div class="col-lg-10">
           <!-- Quick Actions -->
           <div class="wiki-actions mb-4" v-if="isAuthenticated">
             <button 
@@ -199,7 +199,7 @@ const activeTab = ref('pages')
 const categories = ref<Array<{ name: string; count: number }>>([])
 const tags = ref<Array<{ name: string; count: number }>>([])
 const recentPages = ref([])
-const specialPages = ref([])
+const specialPages = ref<Array<{ type: string; title: string }>>([])
 
 // Computed
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -304,9 +304,22 @@ const loadRecentChanges = async () => {
 onMounted(async () => {
   await Promise.all([
     loadPages(),
-    loadRecentChanges()
+    loadRecentChanges(),
+    loadSidebarData()
   ])
 })
+
+const loadSidebarData = async () => {
+  try {
+    const sidebarData = await wikiStore.fetchSidebarData()
+    recentPages.value = sidebarData.recentPages
+    categories.value = sidebarData.categories
+    tags.value = sidebarData.tags
+    specialPages.value = sidebarData.specialPages
+  } catch (error) {
+    console.error('Failed to load sidebar data:', error)
+  }
+}
 
 // Watch for tab changes
 watch(activeTab, (newTab) => {

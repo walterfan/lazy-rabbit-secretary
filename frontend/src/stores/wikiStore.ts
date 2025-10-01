@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './authStore'
+import { getApiUrl } from '@/utils/apiConfig'
 import type { 
   WikiPage, 
   WikiRevision, 
@@ -37,12 +38,6 @@ export const useWikiStore = defineStore('wiki', () => {
   const hasSearchResults = computed(() => searchResults.value.length > 0)
   const totalPagesCount = computed(() => Math.ceil(totalPages.value / pageSize.value))
 
-  // Helper function to get API base URL
-  const getApiUrl = (endpoint: string) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-    return `${baseUrl}/api/v1${endpoint}`
-  }
-
   // Helper function to get headers
   const getHeaders = () => {
     const headers: Record<string, string> = {
@@ -74,7 +69,7 @@ export const useWikiStore = defineStore('wiki', () => {
       if (params.status) queryParams.append('status', params.status)
       if (params.type) queryParams.append('type', params.type)
       
-      const response = await fetch(getApiUrl(`/wiki/pages?${queryParams}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/pages?${queryParams}`), {
         headers: getHeaders()
       })
       
@@ -99,7 +94,7 @@ export const useWikiStore = defineStore('wiki', () => {
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl(`/wiki/page/${slug}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/page/${slug}`), {
         headers: getHeaders()
       })
       
@@ -135,7 +130,7 @@ export const useWikiStore = defineStore('wiki', () => {
       queryParams.append('page', (params.page || 1).toString())
       queryParams.append('limit', (params.limit || pageSize.value).toString())
       
-      const response = await fetch(getApiUrl(`/wiki/search?${queryParams}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/search?${queryParams}`), {
         headers: getHeaders()
       })
       
@@ -167,7 +162,7 @@ export const useWikiStore = defineStore('wiki', () => {
       queryParams.append('page', (params.page || 1).toString())
       queryParams.append('limit', (params.limit || pageSize.value).toString())
       
-      const response = await fetch(getApiUrl(`/wiki/category/${category}?${queryParams}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/category/${category}?${queryParams}`), {
         headers: getHeaders()
       })
       
@@ -192,7 +187,7 @@ export const useWikiStore = defineStore('wiki', () => {
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl('/wiki/random'), {
+      const response = await fetch(getApiUrl('/api/v1/wiki/random'), {
         headers: getHeaders()
       })
       
@@ -222,7 +217,7 @@ export const useWikiStore = defineStore('wiki', () => {
       queryParams.append('page', (params.page || 1).toString())
       queryParams.append('limit', (params.limit || 20).toString())
       
-      const response = await fetch(getApiUrl(`/wiki/recent-changes?${queryParams}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/recent-changes?${queryParams}`), {
         headers: getHeaders()
       })
       
@@ -241,6 +236,56 @@ export const useWikiStore = defineStore('wiki', () => {
     }
   }
 
+  // Sidebar data methods
+  const fetchSidebarData = async () => {
+    try {
+      // Fetch recent pages (limit to 5 for sidebar)
+      const recentResponse = await fetch(getApiUrl('/api/v1/wiki/pages?limit=5'), {
+        headers: getHeaders()
+      })
+      
+      if (recentResponse.ok) {
+        const recentData = await recentResponse.json()
+        return {
+          recentPages: recentData.pages || [],
+          categories: [], // TODO: Implement categories endpoint
+          tags: [], // TODO: Implement tags endpoint
+          specialPages: [
+            { type: 'recent-changes', title: 'Recent Changes' },
+            { type: 'random', title: 'Random Page' },
+            { type: 'orphaned', title: 'Orphaned Pages' },
+            { type: 'wanted', title: 'Wanted Pages' }
+          ]
+        }
+      }
+      
+      return {
+        recentPages: [],
+        categories: [],
+        tags: [],
+        specialPages: [
+          { type: 'recent-changes', title: 'Recent Changes' },
+          { type: 'random', title: 'Random Page' },
+          { type: 'orphaned', title: 'Orphaned Pages' },
+          { type: 'wanted', title: 'Wanted Pages' }
+        ]
+      }
+    } catch (err) {
+      console.error('Failed to fetch sidebar data:', err)
+      return {
+        recentPages: [],
+        categories: [],
+        tags: [],
+        specialPages: [
+          { type: 'recent-changes', title: 'Recent Changes' },
+          { type: 'random', title: 'Random Page' },
+          { type: 'orphaned', title: 'Orphaned Pages' },
+          { type: 'wanted', title: 'Wanted Pages' }
+        ]
+      }
+    }
+  }
+
   const fetchPageHistory = async (slug: string, params: {
     page?: number
     limit?: number
@@ -253,7 +298,7 @@ export const useWikiStore = defineStore('wiki', () => {
       queryParams.append('page', (params.page || 1).toString())
       queryParams.append('limit', (params.limit || 20).toString())
       
-      const response = await fetch(getApiUrl(`/wiki/page/${slug}/history?${queryParams}`), {
+      const response = await fetch(getApiUrl(`/api/v1/wiki/page/${slug}/history?${queryParams}`), {
         headers: getHeaders()
       })
       
@@ -284,7 +329,7 @@ export const useWikiStore = defineStore('wiki', () => {
         realm_id: pageData.realm_id || authStore.currentUser?.realm_id
       }
       
-      const response = await fetch(getApiUrl('/admin/wiki/pages'), {
+      const response = await fetch(getApiUrl('/api/v1/admin/wiki/pages'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(requestData)
@@ -317,7 +362,7 @@ export const useWikiStore = defineStore('wiki', () => {
         realm_id: pageData.realm_id || authStore.currentUser?.realm_id
       }
       
-      const response = await fetch(getApiUrl(`/admin/wiki/pages/${id}`), {
+      const response = await fetch(getApiUrl(`/api/v1/admin/wiki/pages/${id}`), {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(requestData)
@@ -350,7 +395,7 @@ export const useWikiStore = defineStore('wiki', () => {
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl(`/admin/wiki/pages/${id}`), {
+      const response = await fetch(getApiUrl(`/api/v1/admin/wiki/pages/${id}`), {
         method: 'DELETE',
         headers: getHeaders()
       })
@@ -382,7 +427,7 @@ export const useWikiStore = defineStore('wiki', () => {
     error.value = null
     
     try {
-      const response = await fetch(getApiUrl(`/admin/wiki/pages/${pageId}/revisions`), {
+      const response = await fetch(getApiUrl(`/api/v1/admin/wiki/pages/${pageId}/revisions`), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(revisionData)
@@ -454,6 +499,7 @@ export const useWikiStore = defineStore('wiki', () => {
     fetchRandomPage,
     fetchRecentChanges,
     fetchPageHistory,
+    fetchSidebarData,
     createPage,
     updatePage,
     deletePage,

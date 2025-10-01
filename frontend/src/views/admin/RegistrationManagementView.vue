@@ -517,8 +517,11 @@ const approveUser = (user: User) => {
     user: user,
     reason: ''
   }
-  const modal = new (window as any).bootstrap.Modal(document.getElementById('approvalModal'))
-  modal.show()
+  const modalElement = document.getElementById('approvalModal')
+  if (modalElement && (window as any).bootstrap) {
+    const modal = new (window as any).bootstrap.Modal(modalElement)
+    modal.show()
+  }
 }
 
 const denyUser = (user: User) => {
@@ -527,8 +530,11 @@ const denyUser = (user: User) => {
     user: user,
     reason: ''
   }
-  const modal = new (window as any).bootstrap.Modal(document.getElementById('approvalModal'))
-  modal.show()
+  const modalElement = document.getElementById('approvalModal')
+  if (modalElement && (window as any).bootstrap) {
+    const modal = new (window as any).bootstrap.Modal(modalElement)
+    modal.show()
+  }
 }
 
 const suspendUser = (user: User) => {
@@ -537,14 +543,20 @@ const suspendUser = (user: User) => {
     user: user,
     reason: ''
   }
-  const modal = new (window as any).bootstrap.Modal(document.getElementById('approvalModal'))
-  modal.show()
+  const modalElement = document.getElementById('approvalModal')
+  if (modalElement && (window as any).bootstrap) {
+    const modal = new (window as any).bootstrap.Modal(modalElement)
+    modal.show()
+  }
 }
 
 const viewUserDetails = (user: User) => {
   selectedUser.value = user
-  const modal = new (window as any).bootstrap.Modal(document.getElementById('userDetailsModal'))
-  modal.show()
+  const modalElement = document.getElementById('userDetailsModal')
+  if (modalElement && (window as any).bootstrap) {
+    const modal = new (window as any).bootstrap.Modal(modalElement)
+    modal.show()
+  }
 }
 
 const confirmAction = async () => {
@@ -570,8 +582,13 @@ const confirmAction = async () => {
       throw new Error('Failed to process registration')
     }
 
-    const modal = (window as any).bootstrap.Modal.getInstance(document.getElementById('approvalModal'))
-    modal.hide()
+    const modalElement = document.getElementById('approvalModal')
+    if (modalElement && (window as any).bootstrap) {
+      const modal = (window as any).bootstrap.Modal.getInstance(modalElement)
+      if (modal) {
+        modal.hide()
+      }
+    }
     
     // Refresh data
     await refreshData()

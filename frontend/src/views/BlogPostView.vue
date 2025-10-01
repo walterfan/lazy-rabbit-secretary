@@ -55,7 +55,7 @@
                   <li class="breadcrumb-item">
                     <router-link to="/blog" class="text-decoration-none">Blog</router-link>
                   </li>
-                  <li v-if="post.categories.length > 0" class="breadcrumb-item">
+                  <li v-if="post.categories && post.categories.length > 0" class="breadcrumb-item">
                     <button 
                       class="btn btn-link p-0 text-decoration-none"
                       @click="goToCategory(post.categories[0])"
@@ -68,7 +68,7 @@
               </nav>
 
               <!-- Categories -->
-              <div v-if="post.categories.length > 0" class="mb-3">
+              <div v-if="post.categories && post.categories.length > 0" class="mb-3">
                 <button
                   v-for="category in post.categories"
                   :key="category"
@@ -98,7 +98,7 @@
                 </div>
                 <div class="d-flex align-items-center" :class="{ 'text-white-50': post.featured_image }">
                   <i class="bi bi-clock me-2"></i>
-                  <span>{{ estimateReadingTime(post.content) }} min read</span>
+                  <span>{{ estimateReadingTime(post.content || '') }} min read</span>
                 </div>
                 <div class="d-flex align-items-center" :class="{ 'text-white-50': post.featured_image }">
                   <i class="bi bi-eye me-2"></i>
@@ -128,6 +128,15 @@
                   <i class="bi bi-link-45deg"></i>
                   Copy Link
                 </button>
+                <button 
+                  v-if="isAuthenticated"
+                  class="btn btn-outline-success btn-sm"
+                  :class="{ 'btn-outline-light': post.featured_image }"
+                  @click="editPost"
+                >
+                  <i class="bi bi-pencil"></i>
+                  Edit
+                </button>
               </div>
             </div>
           </div>
@@ -141,11 +150,35 @@
             <div class="col-lg-8">
               <!-- Content -->
               <div class="post-content-wrapper">
-                <div v-html="formattedContent" class="post-content-html"></div>
+                <!-- View Mode Toggle -->
+                <div class="d-flex justify-content-end mb-3">
+                  <div class="btn-group btn-group-sm">
+                    <button 
+                      class="btn"
+                      :class="viewMode === 'html' ? 'btn-primary' : 'btn-outline-secondary'"
+                      @click="viewMode = 'html'"
+                    >
+                      <i class="bi bi-code-square"></i>
+                      HTML
+                    </button>
+                    <button 
+                      class="btn"
+                      :class="viewMode === 'markdown' ? 'btn-primary' : 'btn-outline-secondary'"
+                      @click="viewMode = 'markdown'"
+                    >
+                      <i class="bi bi-markdown"></i>
+                      Markdown
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Content Display -->
+                <div v-if="viewMode === 'html'" v-html="formattedContent" class="post-content-html"></div>
+                <pre v-else class="post-content-markdown"><code>{{ formattedContent }}</code></pre>
               </div>
 
               <!-- Tags -->
-              <div v-if="post.tags.length > 0" class="tags-section mt-5 pt-4 border-top">
+              <div v-if="post.tags && post.tags.length > 0" class="tags-section mt-5 pt-4 border-top">
                 <h6 class="mb-3">Tags:</h6>
                 <div class="d-flex flex-wrap gap-2">
                   <button
@@ -213,7 +246,7 @@
               </div>
 
               <!-- Related Posts -->
-              <div v-if="relatedPosts.length > 0" class="related-posts mt-5 pt-4 border-top">
+              <div v-if="relatedPosts && relatedPosts.length > 0" class="related-posts mt-5 pt-4 border-top">
                 <h4 class="mb-4">Related Posts</h4>
                 <div class="row g-4">
                   <div 
@@ -274,30 +307,43 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePostStore, type Post } from '@/stores/postStore'
+import { useAuthStore } from '@/stores/authStore'
+import { marked } from 'marked'
 
 // Stores
 const postStore = usePostStore()
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+
+// Configure marked for better rendering
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  headerIds: false,
+  mangle: false
+})
 
 // State
 const showToast = ref(false)
 const previousPost = ref<Post | null>(null)
 const nextPost = ref<Post | null>(null)
 const relatedPosts = ref<Post[]>([])
+const viewMode = ref<'html' | 'markdown'>('html')
 
 // Computed
 const post = computed(() => postStore.currentPost)
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const formattedContent = computed(() => {
   if (!post.value?.content) return ''
   
-  // Basic HTML formatting (in a real app, you'd use a proper markdown parser)
-  return post.value.content
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>')
+  if (viewMode.value === 'markdown') {
+    return post.value.content
+  }
+  
+  // Render markdown to HTML
+  return marked(post.value.content)
 })
 
 // Watchers
@@ -391,6 +437,12 @@ const copyLink = async () => {
   }
 }
 
+const editPost = () => {
+  if (post.value) {
+    router.push(`/posts?edit=${post.value.id}`)
+  }
+}
+
 // Utility functions
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -407,6 +459,7 @@ const formatNumber = (num: number) => {
 }
 
 const estimateReadingTime = (content: string) => {
+  if (!content) return 1
   const wordsPerMinute = 200
   const words = content.replace(/<[^>]*>/g, '').split(/\s+/).length
   return Math.ceil(words / wordsPerMinute)
@@ -458,6 +511,21 @@ const truncateText = (text: string, length: number) => {
   font-size: 1.1rem;
   line-height: 1.8;
   color: #333;
+}
+
+.post-content-markdown {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .post-content-html p {

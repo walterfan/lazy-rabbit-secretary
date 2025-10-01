@@ -21,5 +21,5 @@
    nats
    openai_api
    code_structure
-   email_sender
+   
    function_calling

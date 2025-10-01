@@ -124,6 +124,9 @@
 
                   <!-- Title -->
                   <h5 class="mb-2">
+                    <span class="text-muted me-2" style="font-weight: normal; font-size: 0.9em;">
+                      {{ String(index + 1).padStart(2, ' ') }}.
+                    </span>
                     <router-link 
                       v-if="showLink"
                       :to="`/blog/${post.slug}`"
