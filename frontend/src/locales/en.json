@@ -1,6 +1,7 @@
 {
   "nav": {
     "home": "Home",
+    "memo": "Memo",
     "gtd": "Time",
     "gtdSystem": "GTD",
     "tasks": "Tasks",

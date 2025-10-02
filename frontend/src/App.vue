@@ -44,14 +44,12 @@
           </li>
           <li class="nav-item dropdown" v-if="isAuthenticated">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              <i class="bi bi-check2-square"></i> {{ $t('nav.knowledge') }}
+              <i class="bi bi-journal"></i> {{ $t('nav.memo') }}
             </a>
             <ul class="dropdown-menu">
-
-
-              <li v-if="isAuthenticated">
-                <router-link class="dropdown-item" to="/books">
-                  <i class="bi bi-book"></i> {{ $t('nav.books') }}
+              <li>
+                <router-link class="dropdown-item" to="/blog">
+                  <i class="bi bi-journal-text"></i> {{ $t('nav.blog') }}
                 </router-link>
               </li>
               <li v-if="isAuthenticated">
@@ -59,19 +57,27 @@
                   <i class="bi bi-bookmark"></i> {{ $t('nav.bookmarks') }}
                 </router-link>
               </li>
-              <li v-if="isAuthenticated">
-                <router-link class="dropdown-item" to="/blog">
-                  <i class="bi bi-journal-text"></i> {{ $t('nav.blog') }}
+              <li>
+                <router-link class="dropdown-item" to="/tools/diagram-management">
+                  <i class="bi bi-diagram-2"></i> {{ $t('nav.diagramManagement') }}
                 </router-link>
               </li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown" v-if="isAuthenticated">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-check2-square"></i> {{ $t('nav.knowledge') }}
+            </a>
+            <ul class="dropdown-menu">
+              <li v-if="isAuthenticated">
+                <router-link class="dropdown-item" to="/books">
+                  <i class="bi bi-book"></i> {{ $t('nav.books') }}
+                </router-link>
+              </li>
+
               <li  v-if="isAuthenticated">
                 <router-link class="dropdown-item" to="/wiki">
                   <i class="bi bi-book"></i> {{ $t('nav.wiki') }}
-                </router-link>
-              </li>
-              <li v-if="isAuthenticated">
-                <router-link class="dropdown-item" to="/tools/diagram-management">
-                  <i class="bi bi-diagram-2"></i> {{ $t('nav.diagramManagement') }}
                 </router-link>
               </li>
               <li v-if="isAuthenticated">
@@ -79,7 +85,6 @@
                   <i class="bi bi-images"></i> {{ $t('nav.images') }}
                 </router-link>
               </li>
-
             </ul>
           </li>
 
