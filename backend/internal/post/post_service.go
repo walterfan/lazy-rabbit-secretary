@@ -59,9 +59,6 @@ type BasePostRequest struct {
 // CreatePostRequest represents the request to create a post
 type CreatePostRequest struct {
 	BasePostRequest
-	// Override validation for required fields in create
-	Title   string `json:"title" binding:"required" validate:"required,min=1,max=200"`
-	Content string `json:"content" validate:"required,min=1"`
 }
 
 // UpdatePostRequest represents the request to update a post
@@ -126,9 +123,9 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Generate slug if not provided
-	slug := req.BasePostRequest.Slug
+	slug := req.Slug
 	if slug == "" {
-		slug = s.generateSlugFromTitle(req.BasePostRequest.Title)
+		slug = s.generateSlugFromTitle(req.Title)
 	}
 
 	// Ensure slug is unique
@@ -141,23 +138,23 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	post := &models.Post{
 		ID:              uuid.New().String(),
 		RealmID:         realmID,
-		Title:           req.BasePostRequest.Title,
+		Title:           req.Title,
 		Slug:            uniqueSlug,
-		Content:         req.BasePostRequest.Content,
-		Excerpt:         req.BasePostRequest.Excerpt,
-		Status:          req.BasePostRequest.Status,
-		Type:            req.BasePostRequest.Type,
-		Format:          req.BasePostRequest.Format,
-		Password:        req.BasePostRequest.Password,
-		MetaTitle:       req.BasePostRequest.MetaTitle,
-		MetaDescription: req.BasePostRequest.MetaDescription,
-		MetaKeywords:    req.BasePostRequest.MetaKeywords,
-		FeaturedImage:   req.BasePostRequest.FeaturedImage,
-		MenuOrder:       req.BasePostRequest.MenuOrder,
-		IsSticky:        req.BasePostRequest.IsSticky,
-		AllowPings:      req.BasePostRequest.AllowPings,
-		CommentStatus:   req.BasePostRequest.CommentStatus,
-		ScheduledFor:    req.BasePostRequest.ScheduledFor,
+		Content:         req.Content,
+		Excerpt:         req.Excerpt,
+		Status:          req.Status,
+		Type:            req.Type,
+		Format:          req.Format,
+		Password:        req.Password,
+		MetaTitle:       req.MetaTitle,
+		MetaDescription: req.MetaDescription,
+		MetaKeywords:    req.MetaKeywords,
+		FeaturedImage:   req.FeaturedImage,
+		MenuOrder:       req.MenuOrder,
+		IsSticky:        req.IsSticky,
+		AllowPings:      req.AllowPings,
+		CommentStatus:   req.CommentStatus,
+		ScheduledFor:    req.ScheduledFor,
 		Language:        "en", // Default language
 		CreatedBy:       createdBy,
 		CreatedAt:       time.Now(),
@@ -166,17 +163,17 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Set categories and tags
-	post.SetCategories(req.BasePostRequest.Categories)
-	post.SetTags(req.BasePostRequest.Tags)
+	post.SetCategories(req.Categories)
+	post.SetTags(req.Tags)
 
 	// Set parent ID if provided
-	if req.BasePostRequest.ParentID != "" {
-		post.ParentID = &req.BasePostRequest.ParentID
+	if req.ParentID != "" {
+		post.ParentID = &req.ParentID
 	}
 
 	// Handle custom fields
-	if len(req.BasePostRequest.CustomFields) > 0 {
-		customFieldsJSON, err := s.serializeCustomFields(req.BasePostRequest.CustomFields)
+	if len(req.CustomFields) > 0 {
+		customFieldsJSON, err := s.serializeCustomFields(req.CustomFields)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize custom fields: %w", err)
 		}
@@ -184,11 +181,11 @@ func (s *PostService) CreateFromInput(req *CreatePostRequest, realmID, createdBy
 	}
 
 	// Handle publishing logic
-	if req.BasePostRequest.Status == models.PostStatusPublished {
+	if req.Status == models.PostStatusPublished {
 		now := time.Now()
 		post.PublishedAt = &now
-	} else if req.BasePostRequest.Status == models.PostStatusScheduled && req.BasePostRequest.ScheduledFor != nil {
-		post.ScheduledFor = req.BasePostRequest.ScheduledFor
+	} else if req.Status == models.PostStatusScheduled && req.ScheduledFor != nil {
+		post.ScheduledFor = req.ScheduledFor
 	}
 
 	// Save to database
@@ -216,74 +213,74 @@ func (s *PostService) UpdateFromInput(id string, req *UpdatePostRequest, updated
 	}
 
 	// Update fields if provided
-	if req.BasePostRequest.Title != "" {
-		post.Title = req.BasePostRequest.Title
+	if req.Title != "" {
+		post.Title = req.Title
 	}
-	if req.BasePostRequest.Slug != "" {
+	if req.Slug != "" {
 		// Ensure slug is unique
-		uniqueSlug, err := s.ensureUniqueSlug(req.BasePostRequest.Slug, post.RealmID, id)
+		uniqueSlug, err := s.ensureUniqueSlug(req.Slug, post.RealmID, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate unique slug: %w", err)
 		}
 		post.Slug = uniqueSlug
 	}
-	if req.BasePostRequest.Content != "" {
-		post.Content = req.BasePostRequest.Content
+	if req.Content != "" {
+		post.Content = req.Content
 	}
-	if req.BasePostRequest.Excerpt != "" {
-		post.Excerpt = req.BasePostRequest.Excerpt
+	if req.Excerpt != "" {
+		post.Excerpt = req.Excerpt
 	}
-	if req.BasePostRequest.Status != "" {
+	if req.Status != "" {
 		oldStatus := post.Status
-		post.Status = req.BasePostRequest.Status
+		post.Status = req.Status
 
 		// Handle status transitions
-		if err := s.handleStatusTransition(post, oldStatus, req.BasePostRequest.Status, req.BasePostRequest.ScheduledFor); err != nil {
+		if err := s.handleStatusTransition(post, oldStatus, req.Status, req.ScheduledFor); err != nil {
 			return nil, fmt.Errorf("failed to handle status transition: %w", err)
 		}
 	}
-	if req.BasePostRequest.Type != "" {
-		post.Type = req.BasePostRequest.Type
+	if req.Type != "" {
+		post.Type = req.Type
 	}
-	if req.BasePostRequest.Format != "" {
-		post.Format = req.BasePostRequest.Format
+	if req.Format != "" {
+		post.Format = req.Format
 	}
-	if req.BasePostRequest.Password != "" {
-		post.Password = req.BasePostRequest.Password
+	if req.Password != "" {
+		post.Password = req.Password
 	}
-	if req.BasePostRequest.MetaTitle != "" {
-		post.MetaTitle = req.BasePostRequest.MetaTitle
+	if req.MetaTitle != "" {
+		post.MetaTitle = req.MetaTitle
 	}
-	if req.BasePostRequest.MetaDescription != "" {
-		post.MetaDescription = req.BasePostRequest.MetaDescription
+	if req.MetaDescription != "" {
+		post.MetaDescription = req.MetaDescription
 	}
-	if req.BasePostRequest.MetaKeywords != "" {
-		post.MetaKeywords = req.BasePostRequest.MetaKeywords
+	if req.MetaKeywords != "" {
+		post.MetaKeywords = req.MetaKeywords
 	}
-	if req.BasePostRequest.FeaturedImage != "" {
-		post.FeaturedImage = req.BasePostRequest.FeaturedImage
+	if req.FeaturedImage != "" {
+		post.FeaturedImage = req.FeaturedImage
 	}
-	if len(req.BasePostRequest.Categories) > 0 {
-		post.SetCategories(req.BasePostRequest.Categories)
+	if len(req.Categories) > 0 {
+		post.SetCategories(req.Categories)
 	}
-	if len(req.BasePostRequest.Tags) > 0 {
-		post.SetTags(req.BasePostRequest.Tags)
+	if len(req.Tags) > 0 {
+		post.SetTags(req.Tags)
 	}
-	if req.BasePostRequest.ParentID != "" {
-		post.ParentID = &req.BasePostRequest.ParentID
+	if req.ParentID != "" {
+		post.ParentID = &req.ParentID
 	}
-	if req.BasePostRequest.MenuOrder != 0 {
-		post.MenuOrder = req.BasePostRequest.MenuOrder
+	if req.MenuOrder != 0 {
+		post.MenuOrder = req.MenuOrder
 	}
-	post.IsSticky = req.BasePostRequest.IsSticky
-	post.AllowPings = req.BasePostRequest.AllowPings
-	if req.BasePostRequest.CommentStatus != "" {
-		post.CommentStatus = req.BasePostRequest.CommentStatus
+	post.IsSticky = req.IsSticky
+	post.AllowPings = req.AllowPings
+	if req.CommentStatus != "" {
+		post.CommentStatus = req.CommentStatus
 	}
 
 	// Handle custom fields
-	if len(req.BasePostRequest.CustomFields) > 0 {
-		customFieldsJSON, err := s.serializeCustomFields(req.BasePostRequest.CustomFields)
+	if len(req.CustomFields) > 0 {
+		customFieldsJSON, err := s.serializeCustomFields(req.CustomFields)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize custom fields: %w", err)
 		}
@@ -325,20 +322,20 @@ func (s *PostService) RefinePost(id string, req *RefineRequest, updatedBy string
 	post.Content = refinedContent
 
 	// Update other fields if provided
-	if req.BasePostRequest.Title != "" {
-		post.Title = req.BasePostRequest.Title
+	if req.Title != "" {
+		post.Title = req.Title
 	}
-	if req.BasePostRequest.Excerpt != "" {
-		post.Excerpt = req.BasePostRequest.Excerpt
+	if req.Excerpt != "" {
+		post.Excerpt = req.Excerpt
 	}
-	if req.BasePostRequest.MetaTitle != "" {
-		post.MetaTitle = req.BasePostRequest.MetaTitle
+	if req.MetaTitle != "" {
+		post.MetaTitle = req.MetaTitle
 	}
-	if req.BasePostRequest.MetaDescription != "" {
-		post.MetaDescription = req.BasePostRequest.MetaDescription
+	if req.MetaDescription != "" {
+		post.MetaDescription = req.MetaDescription
 	}
-	if req.BasePostRequest.MetaKeywords != "" {
-		post.MetaKeywords = req.BasePostRequest.MetaKeywords
+	if req.MetaKeywords != "" {
+		post.MetaKeywords = req.MetaKeywords
 	}
 
 	post.UpdatedBy = updatedBy
@@ -570,32 +567,32 @@ func (s *PostService) Schedule(id string, scheduledTime time.Time, updatedBy str
 // Helper methods
 
 func (s *PostService) validateCreateRequest(req *CreatePostRequest) error {
-	if strings.TrimSpace(req.BasePostRequest.Title) == "" {
+	if strings.TrimSpace(req.Title) == "" {
 		return fmt.Errorf("title is required")
 	}
-	if strings.TrimSpace(req.BasePostRequest.Content) == "" {
+	if strings.TrimSpace(req.Content) == "" {
 		return fmt.Errorf("content is required")
 	}
-	if req.BasePostRequest.Status == "" {
-		req.BasePostRequest.Status = models.PostStatusDraft
+	if req.Status == "" {
+		req.Status = models.PostStatusDraft
 	}
-	if req.BasePostRequest.Type == "" {
-		req.BasePostRequest.Type = models.PostTypePost
+	if req.Type == "" {
+		req.Type = models.PostTypePost
 	}
-	if req.BasePostRequest.Format == "" {
-		req.BasePostRequest.Format = models.PostFormatStandard
+	if req.Format == "" {
+		req.Format = models.PostFormatStandard
 	}
-	if req.BasePostRequest.CommentStatus == "" {
-		req.BasePostRequest.CommentStatus = "open"
+	if req.CommentStatus == "" {
+		req.CommentStatus = "open"
 	}
 	return nil
 }
 
 func (s *PostService) validateUpdateRequest(req *UpdatePostRequest) error {
-	if req.BasePostRequest.Title != "" && strings.TrimSpace(req.BasePostRequest.Title) == "" {
+	if req.Title != "" && strings.TrimSpace(req.Title) == "" {
 		return fmt.Errorf("title cannot be empty")
 	}
-	if req.BasePostRequest.Content != "" && strings.TrimSpace(req.BasePostRequest.Content) == "" {
+	if req.Content != "" && strings.TrimSpace(req.Content) == "" {
 		return fmt.Errorf("content cannot be empty")
 	}
 	return nil

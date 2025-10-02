@@ -31,7 +31,7 @@ export interface I18nMessages {
     title: string;
     description: string;
     inbox: string;
-    dailyChecklist: string;
+    checklist: string;
     analytics: string;
     quickCapture: string;
     quickCaptureDesc: string;

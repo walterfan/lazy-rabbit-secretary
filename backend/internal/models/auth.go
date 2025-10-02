@@ -34,9 +34,12 @@ type CreateUserRequest struct {
 
 // UpdateUserRequest represents a user update request
 type UpdateUserRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email" binding:"omitempty,email"`
-	IsActive *bool  `json:"is_active"`
+	Username        string     `json:"username"`
+	Email           string     `json:"email" binding:"omitempty,email"`
+	Status          UserStatus `json:"status"`
+	RoleIDs         []string   `json:"role_ids"`
+	CurrentPassword string     `json:"current_password"`
+	NewPassword     string     `json:"new_password" binding:"omitempty,min=8"`
 }
 
 // PermissionCheck represents a permission check request

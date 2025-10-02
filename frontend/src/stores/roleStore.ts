@@ -4,6 +4,18 @@ import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 import { getApiUrl } from '@/utils/apiConfig';
 
 // Types
+export interface Policy {
+  id: string;
+  realm_id: string;
+  name: string;
+  description: string;
+  version: string;
+  created_by: string;
+  created_at: string;
+  updated_by: string;
+  updated_at: string;
+}
+
 export interface Role {
   id: string;
   realm_id: string;
@@ -13,6 +25,7 @@ export interface Role {
   created_at: string;
   updated_by: string;
   updated_at: string;
+  policies?: Policy[];
 }
 
 export interface RolesResponse {

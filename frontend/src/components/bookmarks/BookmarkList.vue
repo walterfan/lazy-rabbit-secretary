@@ -197,8 +197,8 @@
       </button>
     </div>
 
-    <!-- Bookmark Cards -->
-    <div v-else class="row">
+    <!-- Bookmark Cards (Grid View) -->
+    <div v-else-if="props.viewMode === 'grid'" class="row">
       <div
         v-for="bookmark in bookmarks"
         :key="bookmark.id"
@@ -211,6 +211,113 @@
           @tag-click="handleTagFilter"
           @category-click="handleCategoryFilter"
         />
+      </div>
+    </div>
+
+    <!-- Bookmark List (List View) -->
+    <div v-else class="list-group">
+      <div
+        v-for="bookmark in bookmarks"
+        :key="bookmark.id"
+        class="list-group-item list-group-item-action"
+      >
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <img
+                v-if="bookmark.favicon_url"
+                :src="bookmark.favicon_url"
+                :alt="`${getDomainFromUrl(bookmark.url)} favicon`"
+                class="favicon me-2"
+                @error="$event.target.style.display = 'none'"
+              />
+              <i v-else class="bi bi-bookmark me-2 text-muted"></i>
+              <h6 class="mb-0 me-2">
+                <a
+                  :href="bookmark.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-decoration-none"
+                >
+                  {{ bookmark.title }}
+                </a>
+              </h6>
+              <small class="text-muted">{{ getDomainFromUrl(bookmark.url) }}</small>
+            </div>
+            
+            <p v-if="bookmark.description" class="mb-2 text-muted">
+              {{ bookmark.description }}
+            </p>
+            
+            <div class="d-flex align-items-center gap-3">
+              <div v-if="bookmark.tags && bookmark.tags.length > 0" class="d-flex flex-wrap gap-1">
+                <span
+                  v-for="tag in bookmark.tags"
+                  :key="tag"
+                  class="badge bg-light text-dark cursor-pointer"
+                  @click="handleTagFilter(tag)"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+              
+              <small v-if="bookmark.category_name" class="text-muted">
+                <i class="bi bi-folder me-1"></i>
+                <span
+                  class="cursor-pointer"
+                  @click="handleCategoryFilter(bookmark.category_id?.toString() || '')"
+                >
+                  {{ bookmark.category_name }}
+                </span>
+              </small>
+              
+              <small class="text-muted">
+                {{ formatRelativeTime(bookmark.created_at) }}
+              </small>
+            </div>
+          </div>
+          
+          <div class="dropdown ms-3">
+            <button
+              class="btn btn-sm btn-outline-secondary dropdown-toggle"
+              type="button"
+              :id="`bookmark-menu-${bookmark.id}`"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="bi bi-three-dots"></i>
+            </button>
+            <ul class="dropdown-menu" :aria-labelledby="`bookmark-menu-${bookmark.id}`">
+              <li>
+                <button class="dropdown-item" @click="$emit('edit', bookmark)">
+                  <i class="bi bi-pencil me-2"></i>
+                  Edit
+                </button>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item"
+                  :href="bookmark.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i class="bi bi-box-arrow-up-right me-2"></i>
+                  Open
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button
+                  class="dropdown-item text-danger"
+                  @click="handleDelete(bookmark)"
+                >
+                  <i class="bi bi-trash me-2"></i>
+                  Delete
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -253,13 +360,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, withDefaults } from 'vue';
 import type { Bookmark, BookmarkCategory, BookmarkListRequest } from '@/types';
 import { useBookmarkStore } from '@/stores/bookmarkStore';
 import BookmarkCard from './BookmarkCard.vue';
 
 interface Props {
   initialFilters?: Partial<BookmarkListRequest>;
+  viewMode?: 'grid' | 'list';
 }
 
 interface Emits {
@@ -268,7 +376,9 @@ interface Emits {
   (e: 'create'): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  viewMode: 'grid'
+});
 const emit = defineEmits<Emits>();
 
 const bookmarkStore = useBookmarkStore();
@@ -311,6 +421,40 @@ const visiblePages = computed(() => {
 });
 
 // Methods
+const getDomainFromUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname;
+  } catch {
+    return url;
+  }
+};
+
+const formatRelativeTime = (date: string | Date): string => {
+  const now = new Date();
+  const bookmarkDate = new Date(date);
+  const diff = now.getTime() - bookmarkDate.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  if (days === 0) {
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours === 0) {
+      const minutes = Math.floor(diff / (1000 * 60));
+      return `${minutes}m ago`;
+    }
+    return `${hours}h ago`;
+  } else if (days === 1) {
+    return 'Yesterday';
+  } else if (days < 7) {
+    return `${days}d ago`;
+  } else {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric'
+    }).format(bookmarkDate);
+  }
+};
+
 const getCategoryName = (categoryId: string): string => {
   const category = categories.value.find(c => c.id.toString() === categoryId);
   return category ? category.name : 'Unknown Category';
@@ -472,5 +616,42 @@ watch(
   --bs-pagination-hover-color: #0a58ca;
   --bs-pagination-active-bg: #0d6efd;
   --bs-pagination-active-border-color: #0d6efd;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  text-decoration: underline;
+}
+
+.favicon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.list-group-item {
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 1rem;
+}
+
+.list-group-item:hover {
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+.list-group-item .badge {
+  font-size: 0.75em;
+}
+
+.list-group-item h6 a {
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.list-group-item h6 a:hover {
+  color: #0a58ca;
+  text-decoration: underline;
 }
 </style>

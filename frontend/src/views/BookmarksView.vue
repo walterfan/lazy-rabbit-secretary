@@ -11,6 +11,24 @@
           <p class="text-muted mb-0">Manage your saved bookmarks and categories</p>
         </div>
         <div class="d-flex gap-2" v-if="activeTab === 'bookmarks'">
+          <div class="btn-group" role="group" aria-label="View toggle">
+            <button
+              type="button"
+              class="btn"
+              :class="viewMode === 'grid' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="viewMode = 'grid'"
+            >
+              <i class="bi bi-grid-3x3-gap"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              :class="viewMode === 'list' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="viewMode = 'list'"
+            >
+              <i class="bi bi-list"></i>
+            </button>
+          </div>
           <button
             class="btn btn-outline-info"
             @click="showStats = !showStats"
@@ -164,6 +182,7 @@
 
       <!-- Bookmark List -->
       <BookmarkList
+        :view-mode="viewMode"
         @edit="handleEdit"
         @delete="handleDelete"
         @create="showCreateModal = true"
@@ -267,6 +286,7 @@ const bookmarkStore = useBookmarkStore();
 
 // Local state
 const activeTab = ref('bookmarks');
+const viewMode = ref<'grid' | 'list'>('grid');
 const showStats = ref(false);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -474,6 +494,24 @@ h1.h2 {
   color: #495057;
   background-color: #fff;
   border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.btn-group .btn + .btn {
+  margin-left: -1px;
 }
 
 .tab-content {

@@ -100,7 +100,7 @@ const tabs = computed(() => [
   },
   {
     id: 'daily',
-    label: t('gtd.dailyChecklist'),
+    label: t('gtd.checklist'),
     icon: 'bi bi-calendar-check',
     badge: dailyStore.totalCount > 0 ? dailyStore.totalCount : null
   },

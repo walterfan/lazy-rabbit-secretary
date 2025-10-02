@@ -224,6 +224,21 @@ func (a *AuthService) RegisterUser(req models.CreateUserRequest, createdBy strin
 	return user, nil
 }
 
+// VerifyPassword verifies if a password matches the stored hash
+func (a *AuthService) VerifyPassword(password, hash string) bool {
+	return a.passwordManager.VerifyPassword(password, hash)
+}
+
+// HashPassword creates a hash of the given password
+func (a *AuthService) HashPassword(password string) (string, error) {
+	return a.passwordManager.HashPassword(password)
+}
+
+// CheckPasswordStrength validates password requirements
+func (a *AuthService) CheckPasswordStrength(password string) error {
+	return a.passwordManager.CheckPasswordStrength(password)
+}
+
 // CheckPermission checks if a user has permission to perform an action
 func (a *AuthService) CheckPermission(userID, realmID, action, resource string, context map[string]interface{}) (bool, error) {
 	check := models.PermissionCheck{
@@ -437,6 +452,7 @@ type UserService interface {
 	GetUserByID(userID string) (*models.User, error)
 	GetUserByUsername(username string, realmID string) (*models.User, error)
 	GetUserRoles(userID string) ([]*models.Role, error)
+	UpdateUserRoles(userID string, roleIDs []string) error
 	GetRealmByName(realmName string) (*models.Realm, error)
 	CreateUser(user *models.User) error
 	UpdateUser(user *models.User) error
@@ -518,6 +534,57 @@ func (s *SimpleUserService) GetUserRoles(userID string) ([]*models.Role, error) 
 	return roles, nil
 }
 
+func (s *SimpleUserService) UpdateUserRoles(userID string, roleIDs []string) error {
+	db := database.GetDB()
+
+	// Validate that all role IDs exist
+	if len(roleIDs) > 0 {
+		var roleCount int64
+		if err := db.Model(&models.Role{}).Where("id IN ?", roleIDs).Count(&roleCount).Error; err != nil {
+			return fmt.Errorf("failed to validate role IDs: %w", err)
+		}
+		if roleCount != int64(len(roleIDs)) {
+			return fmt.Errorf("one or more role IDs are invalid")
+		}
+	}
+
+	// Start a transaction
+	tx := db.Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("failed to start transaction: %w", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Remove all existing user roles
+	if err := tx.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to remove existing user roles: %w", err)
+	}
+
+	// Add new user roles
+	for _, roleID := range roleIDs {
+		userRole := models.UserRole{
+			UserID: userID,
+			RoleID: roleID,
+		}
+		if err := tx.Create(&userRole).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to create user role: %w", err)
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (s *SimpleUserService) CreateUser(user *models.User) error {
 	db := database.GetDB()
 
@@ -554,6 +621,7 @@ func (s *SimpleUserService) UpdateUser(user *models.User) error {
 		Email:          user.Email,
 		HashedPassword: user.HashedPassword,
 		IsActive:       user.IsActive,
+		Status:         user.Status,
 		CreatedBy:      user.CreatedBy,
 		CreatedAt:      user.CreatedAt,
 		UpdatedBy:      user.UpdatedBy,
@@ -787,9 +855,9 @@ func (s *SimpleUserService) GetUserRegistrations(req models.UserRegistrationRequ
 		pageSize = 100 // Limit max page size
 	}
 
-	// Apply pagination
+	// Apply pagination and preload roles
 	offset := (page - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&users).Error; err != nil {
+	if err := query.Preload("Roles").Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("failed to get users: %w", err)
 	}
 

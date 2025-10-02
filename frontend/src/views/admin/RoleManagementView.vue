@@ -48,6 +48,7 @@
                     <th>{{ $t('admin.name') }}</th>
                     <th>{{ $t('admin.description') }}</th>
                     <th>{{ $t('admin.realmId') }}</th>
+                    <th>{{ $t('admin.policies') }}</th>
                     <th>{{ $t('admin.created') }}</th>
                     <th>{{ $t('admin.actions') }}</th>
                   </tr>
@@ -60,6 +61,20 @@
                     <td>{{ role.description || $t('admin.noDescription') }}</td>
                     <td>
                       <span class="badge bg-secondary">{{ role.realm_id }}</span>
+                    </td>
+                    <td>
+                      <div v-if="role.policies && role.policies.length > 0" class="d-flex flex-wrap gap-1">
+                        <span 
+                          v-for="policy in role.policies" 
+                          :key="policy.id"
+                          class="badge bg-info cursor-pointer"
+                          @click="viewPolicy(policy.id)"
+                          :title="policy.description"
+                        >
+                          {{ policy.name }}
+                        </span>
+                      </div>
+                      <span v-else class="text-muted">{{ $t('admin.noPolicies') }}</span>
                     </td>
                     <td>{{ formatDate(role.created_at) }}</td>
                     <td>
@@ -232,9 +247,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useRoleStore, type Role, type CreateRoleRequest, type UpdateRoleRequest } from '@/stores/roleStore';
+import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
+import { getApiUrl } from '@/utils/apiConfig';
 
 const { t } = useI18n();
+const router = useRouter();
 const roleStore = useRoleStore();
 
 // Local state
@@ -339,14 +358,31 @@ const managePolicies = async (role: Role) => {
   selectedRole.value = role;
   showPolicyModal.value = true;
   
-  // Load available policies and assigned policies
-  // Note: This would need to be implemented with policy management APIs
   try {
-    // Placeholder for policy management - would need to implement policy APIs
-    availablePolicies.value = [];
-    assignedPolicies.value = [];
+    // Load all policies from the API
+    const url = getApiUrl('/api/v1/admin/policies?page_size=100');
+    const response = await makeAuthenticatedRequest(url, {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch policies: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const allPolicies = data.policies || [];
+    
+    // Get policies already assigned to this role
+    assignedPolicies.value = role.policies || [];
+    
+    // Filter out assigned policies from available policies
+    const assignedPolicyIds = new Set(assignedPolicies.value.map(p => p.id));
+    availablePolicies.value = allPolicies.filter(policy => !assignedPolicyIds.has(policy.id));
+    
   } catch (error) {
     console.error('Failed to load policies:', error);
+    availablePolicies.value = [];
+    assignedPolicies.value = [];
   }
 };
 
@@ -394,6 +430,11 @@ const closePolicyModal = () => {
   assignedPolicies.value = [];
 };
 
+const viewPolicy = (policyId: string) => {
+  // Navigate to permission management page with the specific policy
+  router.push(`/admin/permissions?policy=${policyId}`);
+};
+
 // Lifecycle
 onMounted(() => {
   loadRoles();
@@ -411,5 +452,13 @@ onMounted(() => {
 
 .list-group-item:hover {
   background-color: #f8f9fa;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.8;
 }
 </style>

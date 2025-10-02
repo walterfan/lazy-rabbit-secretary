@@ -102,6 +102,10 @@ func GetAllModels() []interface{} {
 		&UserPolicy{},
 		&ResourcePolicy{},
 
+		// Enhanced Permission System
+		&UserPermission{},
+		&RolePermission{},
+
 		// Project & Content Management
 		&Project{},
 		&Book{},
@@ -161,6 +165,10 @@ type DatabaseModels struct {
 	RolePolicies     []RolePolicy
 	UserPolicies     []UserPolicy
 	ResourcePolicies []ResourcePolicy
+
+	// Enhanced Permission System
+	UserPermissions []UserPermission
+	RolePermissions []RolePermission
 
 	// Project & Content Management
 	Projects  []Project

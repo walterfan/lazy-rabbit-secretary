@@ -28,8 +28,9 @@ Lazy Rabbit Secretary
    :caption: Contents:
 
    1.design/index
-   2.test/index
-   3.devops/index
+   2.implement/index
+   3.test/index
+   4.devops/index
 
 Indices and tables
 ==================

@@ -115,7 +115,7 @@
                 <button 
                   class="btn btn-outline-primary btn-sm"
                   :class="{ 'btn-outline-light': post.featured_image }"
-                  @click="shareOnTwitter"
+                  @click="shareOnZhihu"
                 >
                   <i class="bi bi-twitter"></i>
                   Share
@@ -196,9 +196,9 @@
               <div class="share-section mt-5 pt-4 border-top">
                 <h6 class="mb-3">Share this post:</h6>
                 <div class="d-flex gap-2">
-                  <button class="btn btn-primary btn-sm" @click="shareOnTwitter">
+                  <button class="btn btn-primary btn-sm" @click="shareOnZhihu">
                     <i class="bi bi-twitter"></i>
-                    Twitter
+                    Zhihu
                   </button>
                   <button class="btn btn-primary btn-sm" @click="shareOnLinkedIn">
                     <i class="bi bi-linkedin"></i>
@@ -401,11 +401,11 @@ const goToTag = (tag: string) => {
   router.push({ path: '/blog', query: { tag } })
 }
 
-const shareOnTwitter = () => {
+const shareOnZhihu = () => {
   const url = encodeURIComponent(window.location.href)
   const text = encodeURIComponent(`Check out this post: ${post.value?.title}`)
-  const twitterUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`
-  window.open(twitterUrl, '_blank', 'width=600,height=400')
+  const zhihuUrl = `https://zhuanlan.zhihu.com/write?url=${url}&text=${text}`
+  window.open(zhihuUrl, '_blank', 'width=600,height=400')
 }
 
 const shareOnLinkedIn = () => {

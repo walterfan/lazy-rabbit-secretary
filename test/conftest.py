@@ -58,7 +58,7 @@ def setup_test_environment():
     # Set other test environment variables if needed (don't override existing)
     os.environ.setdefault("DB_TYPE", "sqlite")
     os.environ.setdefault("DB_FILE_PATH", "test_lazy_rabbit_reminder.db")
-    os.environ.setdefault("TEST_BASE_URL", "http://localhost:9090")
+    os.environ.setdefault("TEST_BASE_URL", "https://localhost:9090")
     os.environ.setdefault("TEST_USERNAME", "admin")
     os.environ.setdefault("TEST_PASSWORD", "admin123")
     os.environ.setdefault("TEST_REALM", "default")

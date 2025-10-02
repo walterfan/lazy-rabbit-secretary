@@ -166,8 +166,58 @@ func (h *UserHandlers) UpdateUser(c *gin.Context) {
 	if req.Email != "" {
 		user.Email = req.Email
 	}
-	if req.IsActive != nil {
-		user.IsActive = *req.IsActive
+	if req.Status != "" {
+		user.Status = req.Status
+	}
+
+	// Handle password change if requested
+	if req.NewPassword != "" {
+		// If changing password, current password must be provided (unless admin is changing it)
+		if req.CurrentPassword == "" {
+			// Check if current user is admin or the user themselves
+			if currentUserID != userID {
+				// Check if current user has admin role
+				roles, hasRoles := GetCurrentRoles(c)
+				isAdmin := false
+				if hasRoles {
+					for _, roleName := range roles {
+						if roleName == "admin" || roleName == "super_admin" {
+							isAdmin = true
+							break
+						}
+					}
+				}
+
+				if !isAdmin {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Current password is required to change password"})
+					return
+				}
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Current password is required to change password"})
+				return
+			}
+		} else {
+			// Verify current password
+			if !h.authService.VerifyPassword(req.CurrentPassword, user.HashedPassword) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Current password is incorrect"})
+				return
+			}
+		}
+
+		// Check new password strength
+		if err := h.authService.CheckPasswordStrength(req.NewPassword); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "New password does not meet requirements", "details": err.Error()})
+			return
+		}
+
+		// Hash new password
+		hashedPassword, err := h.authService.HashPassword(req.NewPassword)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password", "details": err.Error()})
+			return
+		}
+
+		user.HashedPassword = hashedPassword
 	}
 
 	user.UpdatedBy = currentUserID
@@ -179,9 +229,24 @@ func (h *UserHandlers) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// Update user roles if provided (including empty array to remove all roles)
+	if req.RoleIDs != nil {
+		if err := h.authService.userService.UpdateUserRoles(userID, req.RoleIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user roles", "details": err.Error()})
+			return
+		}
+	}
+
+	// Get updated user with roles for response
+	updatedUser, err := h.authService.userService.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get updated user", "details": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User updated successfully",
-		"user":    user,
+		"user":    updatedUser,
 	})
 }
 

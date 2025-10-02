@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { 
-  DailyChecklistItem, 
+  ChecklistItem, 
   CreateDailyItemRequest, 
   UpdateDailyItemRequest, 
   DailyListResponse,
@@ -11,7 +11,7 @@ import { handleHttpError, showErrorAlert, logError } from '@/utils/errorHandler'
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 
 export const useDailyStore = defineStore('daily', () => {
-  const items = ref<DailyChecklistItem[]>([]);
+  const items = ref<ChecklistItem[]>([]);
   const totalCount = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -106,7 +106,7 @@ export const useDailyStore = defineStore('daily', () => {
       }
       
       const data = await response.json();
-      return data.items.map((item: DailyChecklistItem) => ({
+      return data.items.map((item: ChecklistItem) => ({
         ...item,
         date: new Date(item.date),
         deadline: item.deadline ? new Date(item.deadline) : undefined,
@@ -152,7 +152,7 @@ export const useDailyStore = defineStore('daily', () => {
   };
 
   // Get a single daily item
-  const getItem = async (id: string): Promise<DailyChecklistItem> => {
+  const getItem = async (id: string): Promise<ChecklistItem> => {
     loading.value = true;
     error.value = null;
     
@@ -184,7 +184,7 @@ export const useDailyStore = defineStore('daily', () => {
   };
 
   // Create a new daily item
-  const addItem = async (item: DailyChecklistItem): Promise<DailyChecklistItem> => {
+  const addItem = async (item: ChecklistItem): Promise<ChecklistItem> => {
     loading.value = true;
     error.value = null;
     
@@ -238,7 +238,7 @@ export const useDailyStore = defineStore('daily', () => {
   };
 
   // Update an existing daily item
-  const updateItem = async (id: string, updates: Partial<DailyChecklistItem>): Promise<DailyChecklistItem> => {
+  const updateItem = async (id: string, updates: Partial<ChecklistItem>): Promise<ChecklistItem> => {
     loading.value = true;
     error.value = null;
     
@@ -321,7 +321,7 @@ export const useDailyStore = defineStore('daily', () => {
   };
 
   // Update item status
-  const updateStatus = async (id: string, status: string): Promise<DailyChecklistItem> => {
+  const updateStatus = async (id: string, status: string): Promise<ChecklistItem> => {
     loading.value = true;
     error.value = null;
     
@@ -365,7 +365,7 @@ export const useDailyStore = defineStore('daily', () => {
   };
 
   // Update actual time
-  const updateActualTime = async (id: string, actualTime: number): Promise<DailyChecklistItem> => {
+  const updateActualTime = async (id: string, actualTime: number): Promise<ChecklistItem> => {
     loading.value = true;
     error.value = null;
     

@@ -9,7 +9,8 @@ import BlogView from '@/views/BlogView.vue';
 import BlogPostView from '@/views/BlogPostView.vue';
 import HomeView from '@/views/HomeView.vue';
 import HelpView from '@/views/HelpView.vue';
-import CommandsView from '@/views/CommandsView.vue';
+import CommandsView from '@/views/CommandsView.vue'
+import PermissionManagementView from '@/views/PermissionManagementView.vue';
 import EncodingToolsView from '@/views/EncodingToolsView.vue';
 import PromptsView from '@/views/PromptsView.vue';
 import AiAssistantView from '@/views/AiAssistantView.vue';
@@ -50,6 +51,12 @@ const router = createRouter({
       path: '/commands',
       name: 'commands',
       component: CommandsView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/permissions',
+      name: 'permissions',
+      component: PermissionManagementView,
       meta: { requiresAuth: true }
     },
     {
@@ -163,6 +170,12 @@ const router = createRouter({
       path: '/blog/:slug',
       name: 'blog-post',
       component: BlogPostView,
+      props: true
+    },
+    {
+      path: '/blog/archive/:year/:month',
+      name: 'blog-archive',
+      component: BlogView,
       props: true
     },
     {

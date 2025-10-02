@@ -17,4 +17,5 @@ type Role struct {
 	UpdatedBy   string         `json:"updated_by" gorm:"type:text"`
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Policies    []Policy       `json:"policies,omitempty" gorm:"many2many:role_policies;foreignKey:ID;joinForeignKey:RoleID;References:ID;joinReferences:PolicyID"` // Role policies
 }

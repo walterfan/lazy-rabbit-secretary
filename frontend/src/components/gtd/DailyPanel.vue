@@ -356,7 +356,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDailyStore } from '@/stores/dailyStore';
-import type { DailyChecklistItem } from '@/types/gtd';
+import type { ChecklistItem } from '@/types/gtd';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 
 const { t, locale } = useI18n();
@@ -370,8 +370,8 @@ const dailyStore = useDailyStore();
 const loading = ref(false);
 const selectedDate = ref(new Date());
 const dailyStats = ref<any>(null);
-const selectedTask = ref<DailyChecklistItem | null>(null);
-const editingTask = ref<DailyChecklistItem | null>(null);
+const selectedTask = ref<ChecklistItem | null>(null);
+const editingTask = ref<ChecklistItem | null>(null);
 const actualTimeInput = ref(0);
 
 // Quick Add State
@@ -472,7 +472,7 @@ const getPriorityProgress = (priority: string): number => {
   return (completed / priorityItems.length) * 100;
 };
 
-const getTasksByPriority = (priority: string): DailyChecklistItem[] => {
+const getTasksByPriority = (priority: string): ChecklistItem[] => {
   return items.value
     .filter(item => item.priority === priority)
     .sort((a, b) => {
@@ -487,7 +487,7 @@ const handleQuickAdd = async () => {
   if (!quickAddTitle.value.trim()) return;
   
   try {
-    const newTask: DailyChecklistItem = {
+    const newTask: ChecklistItem = {
       id: crypto.randomUUID(),
       title: quickAddTitle.value.trim(),
       description: '',
@@ -519,7 +519,7 @@ const handleQuickAdd = async () => {
   }
 };
 
-const selectTask = (task: DailyChecklistItem) => {
+const selectTask = (task: ChecklistItem) => {
   selectedTask.value = task;
   actualTimeInput.value = task.actual_time;
 };
@@ -528,7 +528,7 @@ const closeTaskModal = () => {
   selectedTask.value = null;
 };
 
-const editTask = (task: DailyChecklistItem) => {
+const editTask = (task: ChecklistItem) => {
   editingTask.value = task;
   editForm.value = {
     title: task.title,
@@ -563,7 +563,7 @@ const handleEditSubmit = async () => {
   }
 };
 
-const toggleTaskStatus = async (task: DailyChecklistItem) => {
+const toggleTaskStatus = async (task: ChecklistItem) => {
   try {
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
     await dailyStore.updateStatus(task.id, newStatus);

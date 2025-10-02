@@ -4,6 +4,17 @@ import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 import { getApiUrl } from '@/utils/apiConfig';
 
 // Types
+export interface Role {
+  id: string;
+  realm_id: string;
+  name: string;
+  description: string;
+  created_by: string;
+  created_at: string;
+  updated_by: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   realm_id: string;
@@ -16,6 +27,7 @@ export interface User {
   created_at: string;
   updated_by: string;
   updated_at: string;
+  roles?: Role[];
 }
 
 export interface UsersResponse {
@@ -37,9 +49,10 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
-  is_active?: boolean;
   status?: string;
-  password?: string; // For password changes
+  role_ids?: string[]; // Array of role IDs to assign to user
+  current_password?: string; // Required when user changes their own password
+  new_password?: string; // New password for password changes
 }
 
 export interface UserFilters {

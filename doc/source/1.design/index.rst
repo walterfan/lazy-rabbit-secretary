@@ -10,9 +10,11 @@
    overview
    authorization
    service
+   permission
 
    blog_generation
    task_reminding
+   wiki_design
 
    trap
    tool
@@ -21,5 +23,5 @@
    nats
    openai_api
    code_structure
-   
+
    function_calling

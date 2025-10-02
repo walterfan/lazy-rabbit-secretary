@@ -77,9 +77,9 @@ func (h *RoleHandlers) GetRoles(c *gin.Context) {
 		return
 	}
 
-	// Apply pagination
+	// Apply pagination and preload policies
 	offset := (page - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&roles).Error; err != nil {
+	if err := query.Preload("Policies").Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&roles).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get roles", "details": err.Error()})
 		return
 	}

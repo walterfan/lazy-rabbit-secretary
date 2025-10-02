@@ -105,6 +105,9 @@ func (thiz *WebApiService) Run() {
 	// Register auth routes
 	thiz.setupAuthRoutes(r)
 
+	// Register permission routes
+	thiz.setupPermissionRoutes(r)
+
 	// Register secret routes
 	repo := secret.NewSecretRepository()
 	secretService := secret.NewSecretService(repo)
@@ -444,4 +447,17 @@ func (thiz *WebApiService) setupAuthRoutes(r *gin.Engine) {
 	auth.RegisterRoutes(r, authHandlers, userHandlers, roleHandlers, policyHandlers, realmHandlers, authMiddleware)
 
 	thiz.logger.Info("Registered authentication routes")
+}
+
+func (thiz *WebApiService) setupPermissionRoutes(r *gin.Engine) {
+	// Create permission service and handlers
+	permissionService := auth.NewPermissionService(database.GetDB())
+	permissionHandlers := auth.NewPermissionHandlers(permissionService)
+	authMiddleware := auth.NewAuthMiddleware(thiz.authService)
+	permissionMiddleware := auth.NewPermissionMiddleware(permissionService)
+
+	// Register permission routes
+	auth.RegisterPermissionRoutes(r, permissionHandlers, authMiddleware, permissionMiddleware)
+
+	thiz.logger.Info("Registered permission management routes")
 }

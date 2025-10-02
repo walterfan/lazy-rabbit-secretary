@@ -36,6 +36,7 @@ type User struct {
 	UpdatedBy              string         `json:"updated_by" gorm:"type:text"`
 	UpdatedAt              time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt              gorm.DeletedAt `gorm:"index" json:"-"`
+	Roles                  []Role         `json:"roles,omitempty" gorm:"many2many:user_roles;foreignKey:ID;joinForeignKey:UserID;References:ID;joinReferences:RoleID"` // User roles
 }
 
 func (User) TableName() string {

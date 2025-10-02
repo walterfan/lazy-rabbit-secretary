@@ -48,8 +48,8 @@
                     <th>{{ $t('admin.username') }}</th>
                     <th>{{ $t('admin.email') }}</th>
                     <th>{{ $t('admin.realmId') }}</th>
+                    <th>{{ $t('admin.roles') }}</th>
                     <th>{{ $t('admin.status') }}</th>
-                    <th>{{ $t('admin.emailConfirmed') }}</th>
                     <th>{{ $t('admin.created') }}</th>
                     <th>{{ $t('admin.actions') }}</th>
                   </tr>
@@ -62,13 +62,22 @@
                       <span class="badge bg-secondary">{{ user.realm_id }}</span>
                     </td>
                     <td>
-                      <span :class="getStatusBadgeClass(user.status)">
-                        {{ $t(`admin.userStatus.${user.status}`) }}
-                      </span>
+                      <div v-if="user.roles && user.roles.length > 0" class="d-flex flex-wrap gap-1">
+                        <span 
+                          v-for="role in user.roles" 
+                          :key="role.id"
+                          class="badge bg-primary cursor-pointer"
+                          @click="viewRole(role.id)"
+                          :title="role.description"
+                        >
+                          {{ role.name }}
+                        </span>
+                      </div>
+                      <span v-else class="text-muted">{{ $t('admin.noRoles') }}</span>
                     </td>
                     <td>
-                      <span :class="user.email_confirmed_at ? 'badge bg-success' : 'badge bg-warning'">
-                        {{ user.email_confirmed_at ? $t('admin.confirmed') : $t('admin.pending') }}
+                      <span :class="getStatusBadgeClass(user.status)">
+                        {{ $t(`admin.userStatus.${user.status || 'unknown'}`) }}
                       </span>
                     </td>
                     <td>{{ formatDate(user.created_at) }}</td>
@@ -201,31 +210,91 @@
                     </label>
                   </div>
                 </div>
-                <div class="mb-3" v-if="userForm.changePassword">
-                  <label for="newPassword" class="form-label">{{ $t('admin.newPassword') }}</label>
-                  <input
-                    type="password"
-                    class="form-control"
-                    id="newPassword"
-                    v-model="userForm.password"
-                    :required="userForm.changePassword"
-                    minlength="8"
-                  />
-                  <div class="form-text">{{ $t('admin.passwordMinLength') }}</div>
+                <div v-if="userForm.changePassword">
+                  <div class="mb-3">
+                    <label for="currentPassword" class="form-label">{{ $t('admin.currentPassword') }}</label>
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="currentPassword"
+                      v-model="userForm.currentPassword"
+                      :required="userForm.changePassword"
+                    />
+                    <div class="form-text">{{ $t('admin.currentPasswordRequired') }}</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="newPassword" class="form-label">{{ $t('admin.newPassword') }}</label>
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="newPassword"
+                      v-model="userForm.newPassword"
+                      :required="userForm.changePassword"
+                      minlength="8"
+                    />
+                    <div class="form-text">{{ $t('admin.passwordMinLength') }}</div>
+                  </div>
                 </div>
               </div>
 
-              <div class="mb-3">
-                <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="isActive"
-                    v-model="userForm.is_active"
-                  />
-                  <label class="form-check-label" for="isActive">
-                    {{ $t('admin.active') }}
-                  </label>
+              <!-- Role Management for editing users -->
+              <div class="mb-3" v-if="editingUser">
+                <label class="form-label">{{ $t('admin.roles') }}</label>
+                <div class="border rounded p-3">
+                  <div v-if="roleStore.loading" class="text-center">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                      <span class="visually-hidden">{{ $t('common.loading') }}</span>
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6>{{ $t('admin.availableRoles') }}</h6>
+                        <div class="available-roles" style="max-height: 150px; overflow-y: auto;">
+                          <div 
+                            v-for="role in availableRoles" 
+                            :key="role.id"
+                            class="form-check"
+                          >
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              :id="`role-${role.id}`"
+                              :checked="isRoleSelected(role.id)"
+                              @change="toggleRole(role.id, $event.target.checked)"
+                            />
+                            <label class="form-check-label" :for="`role-${role.id}`">
+                              {{ role.name }}
+                              <small class="text-muted d-block">{{ role.description }}</small>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <h6>{{ $t('admin.selectedRoles') }}</h6>
+                        <div class="selected-roles">
+                          <div v-if="selectedRoleIds.length === 0" class="text-muted">
+                            {{ $t('admin.noRolesSelected') }}
+                          </div>
+                          <div v-else>
+                            <span 
+                              v-for="roleId in selectedRoleIds" 
+                              :key="roleId"
+                              class="badge bg-primary me-1 mb-1"
+                            >
+                              {{ getRoleName(roleId) }}
+                              <button 
+                                type="button" 
+                                class="btn-close btn-close-white ms-1" 
+                                @click="toggleRole(roleId, false)"
+                                style="font-size: 0.7em;"
+                              ></button>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>
@@ -247,24 +316,30 @@
 import { ref, computed, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useUserStore, type User, type CreateUserRequest, type UpdateUserRequest } from '@/stores/userStore';
+import { useRoleStore, type Role } from '@/stores/roleStore';
 
 const { t } = useI18n();
+const router = useRouter();
 const userStore = useUserStore();
+const roleStore = useRoleStore();
 
 // Local state
 const searchTerm = ref('');
 const showCreateModal = ref(false);
 const editingUser = ref<User | null>(null);
+const selectedRoleIds = ref<string[]>([]);
 
-const userForm = ref<CreateUserRequest & { status?: string; changePassword?: boolean }>({
+const userForm = ref<CreateUserRequest & { status?: string; changePassword?: boolean; currentPassword?: string; newPassword?: string }>({
   username: '',
   email: '',
   realm_name: 'default',
   password: '',
-  is_active: true,
   status: 'pending',
   changePassword: false,
+  currentPassword: '',
+  newPassword: '',
 });
 
 // Computed
@@ -287,6 +362,20 @@ const visiblePages = computed(() => {
   
   return pages;
 });
+
+// Role management computed properties
+const availableRoles = computed(() => {
+  return roleStore.roles || [];
+});
+
+const isRoleSelected = (roleId: string) => {
+  return selectedRoleIds.value.includes(roleId);
+};
+
+const getRoleName = (roleId: string) => {
+  const role = roleStore.roles.find(r => r.id === roleId);
+  return role ? role.name : roleId;
+};
 
 // Methods
 const formatDate = (dateString: string) => {
@@ -323,6 +412,25 @@ const changePage = (page: number) => {
   }
 };
 
+// Role management methods
+const toggleRole = (roleId: string, selected: boolean) => {
+  if (selected) {
+    if (!selectedRoleIds.value.includes(roleId)) {
+      selectedRoleIds.value.push(roleId);
+    }
+  } else {
+    selectedRoleIds.value = selectedRoleIds.value.filter(id => id !== roleId);
+  }
+};
+
+const loadRoles = async () => {
+  try {
+    await roleStore.getRoles({ page_size: 100 }); // Load all roles
+  } catch (err) {
+    console.error('Failed to load roles:', err);
+  }
+};
+
 const editUser = (user: User) => {
   editingUser.value = user;
   userForm.value = {
@@ -330,10 +438,18 @@ const editUser = (user: User) => {
     email: user.email,
     realm_name: 'default', // You might want to get the realm name from the user
     password: '',
-    is_active: user.is_active,
     status: user.status,
     changePassword: false,
+    currentPassword: '',
+    newPassword: '',
   };
+  
+  // Load user's current roles
+  selectedRoleIds.value = user.roles ? user.roles.map(role => role.id) : [];
+  
+  // Load all available roles
+  loadRoles();
+  
   showCreateModal.value = true;
 };
 
@@ -343,13 +459,14 @@ const saveUser = async () => {
       const updateData: UpdateUserRequest = {
         username: userForm.value.username,
         email: userForm.value.email,
-        is_active: userForm.value.is_active,
         status: userForm.value.status,
+        role_ids: selectedRoleIds.value, // Include selected role IDs
       };
       
-      // Only include password if user wants to change it
-      if (userForm.value.changePassword && userForm.value.password) {
-        updateData.password = userForm.value.password;
+      // Only include password fields if user wants to change password
+      if (userForm.value.changePassword && userForm.value.newPassword) {
+        updateData.current_password = userForm.value.currentPassword;
+        updateData.new_password = userForm.value.newPassword;
       }
       
       await userStore.updateUser(editingUser.value.id, updateData);
@@ -378,15 +495,22 @@ const deleteUser = async (userId: string) => {
 const closeModal = () => {
   showCreateModal.value = false;
   editingUser.value = null;
+  selectedRoleIds.value = [];
   userForm.value = {
     username: '',
     email: '',
     realm_name: 'default',
     password: '',
-    is_active: true,
     status: 'pending',
     changePassword: false,
+    currentPassword: '',
+    newPassword: '',
   };
+};
+
+const viewRole = (roleId: string) => {
+  // Navigate to role management page with the specific role
+  router.push(`/admin/roles?role=${roleId}`);
 };
 
 // Lifecycle
@@ -398,5 +522,13 @@ onMounted(() => {
 <style scoped>
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.8;
 }
 </style>

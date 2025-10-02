@@ -11,7 +11,7 @@ export interface InboxItem {
   updated_at: Date;
 }
 
-export interface DailyChecklistItem {
+export interface ChecklistItem {
   id: string;
   title: string;
   description: string;
@@ -79,7 +79,7 @@ export interface InboxListResponse {
 }
 
 export interface DailyListResponse {
-  items: DailyChecklistItem[];
+  items: ChecklistItem[];
   total: number;
   page: number;
   limit: number;
