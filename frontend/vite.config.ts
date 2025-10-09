@@ -6,8 +6,8 @@ import fs from 'fs';
 export default defineConfig(({ mode }) => {
   // Get API configuration from environment variables
   const apiProtocol = process.env.VITE_API_PROTOCOL || 'https';
-  const apiHost = process.env.VITE_API_HOST || 'localhost';
-  const apiPort = process.env.VITE_API_PORT || '9090';
+  const apiHost = process.env.VITE_API_HOST || 'www.lazy-rabbit-studio.top';
+  const apiPort = process.env.VITE_API_PORT || '443';
   const apiTarget = `${apiProtocol}://${apiHost}:${apiPort}`;
 
   return {
