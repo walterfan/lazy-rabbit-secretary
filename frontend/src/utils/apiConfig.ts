@@ -21,8 +21,8 @@ export function getApiBaseUrl(): string {
 
   // Build URL from components if available
   const protocol = import.meta.env.VITE_API_PROTOCOL || 'https';
-  const host = import.meta.env.VITE_API_HOST || 'localhost';
-  const port = import.meta.env.VITE_API_PORT || '9090';
+  const host = import.meta.env.VITE_API_HOST || 'lazy-rabbit-studio.top';
+  const port = import.meta.env.VITE_API_PORT || '443';
 
   // Don't include port for standard ports
   if ((protocol === 'https' && port === '443') || (protocol === 'http' && port === '80')) {
