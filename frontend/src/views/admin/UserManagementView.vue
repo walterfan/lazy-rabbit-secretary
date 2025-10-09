@@ -261,7 +261,7 @@
                               type="checkbox"
                               :id="`role-${role.id}`"
                               :checked="isRoleSelected(role.id)"
-                              @change="toggleRole(role.id, $event.target.checked)"
+                              @change="toggleRole(role.id, ($event.target as HTMLInputElement).checked)"
                             />
                             <label class="form-check-label" :for="`role-${role.id}`">
                               {{ role.name }}

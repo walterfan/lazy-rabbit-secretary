@@ -248,7 +248,7 @@ import { ref, computed, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useRoleStore, type Role, type CreateRoleRequest, type UpdateRoleRequest } from '@/stores/roleStore';
+import { useRoleStore, type Role, type Policy, type CreateRoleRequest, type UpdateRoleRequest } from '@/stores/roleStore';
 import { makeAuthenticatedRequest } from '@/utils/httpInterceptor';
 import { getApiUrl } from '@/utils/apiConfig';
 
@@ -262,8 +262,8 @@ const showCreateModal = ref(false);
 const showPolicyModal = ref(false);
 const editingRole = ref<Role | null>(null);
 const selectedRole = ref<Role | null>(null);
-const availablePolicies = ref<any[]>([]);
-const assignedPolicies = ref<any[]>([]);
+const availablePolicies = ref<Policy[]>([]);
+const assignedPolicies = ref<Policy[]>([]);
 
 const roleForm = ref<CreateRoleRequest>({
   realm_name: 'default',
@@ -370,7 +370,7 @@ const managePolicies = async (role: Role) => {
     }
     
     const data = await response.json();
-    const allPolicies = data.policies || [];
+    const allPolicies: Policy[] = data.policies || [];
     
     // Get policies already assigned to this role
     assignedPolicies.value = role.policies || [];

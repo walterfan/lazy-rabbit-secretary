@@ -10,7 +10,6 @@ import BlogPostView from '@/views/BlogPostView.vue';
 import HomeView from '@/views/HomeView.vue';
 import HelpView from '@/views/HelpView.vue';
 import CommandsView from '@/views/CommandsView.vue'
-import PermissionManagementView from '@/views/PermissionManagementView.vue';
 import EncodingToolsView from '@/views/EncodingToolsView.vue';
 import PromptsView from '@/views/PromptsView.vue';
 import AiAssistantView from '@/views/AiAssistantView.vue';

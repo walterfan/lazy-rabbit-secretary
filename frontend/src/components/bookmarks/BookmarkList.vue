@@ -225,11 +225,11 @@
           <div class="flex-grow-1">
             <div class="d-flex align-items-center mb-2">
               <img
-                v-if="bookmark.favicon_url"
-                :src="bookmark.favicon_url"
+                v-if="getFaviconUrl(bookmark.url)"
+                :src="getFaviconUrl(bookmark.url)"
                 :alt="`${getDomainFromUrl(bookmark.url)} favicon`"
                 class="favicon me-2"
-                @error="$event.target.style.display = 'none'"
+                @error="handleImageError"
               />
               <i v-else class="bi bi-bookmark me-2 text-muted"></i>
               <h6 class="mb-0 me-2">
@@ -253,21 +253,21 @@
               <div v-if="bookmark.tags && bookmark.tags.length > 0" class="d-flex flex-wrap gap-1">
                 <span
                   v-for="tag in bookmark.tags"
-                  :key="tag"
+                  :key="tag.id"
                   class="badge bg-light text-dark cursor-pointer"
-                  @click="handleTagFilter(tag)"
+                  @click="handleTagFilter(tag.name)"
                 >
-                  {{ tag }}
+                  {{ tag.name }}
                 </span>
               </div>
               
-              <small v-if="bookmark.category_name" class="text-muted">
+              <small v-if="getCategoryName(bookmark.category_id)" class="text-muted">
                 <i class="bi bi-folder me-1"></i>
                 <span
                   class="cursor-pointer"
                   @click="handleCategoryFilter(bookmark.category_id?.toString() || '')"
                 >
-                  {{ bookmark.category_name }}
+                  {{ getCategoryName(bookmark.category_id) }}
                 </span>
               </small>
               
@@ -457,7 +457,23 @@ const formatRelativeTime = (date: string | Date): string => {
 
 const getCategoryName = (categoryId: string): string => {
   const category = categories.value.find(c => c.id.toString() === categoryId);
-  return category ? category.name : 'Unknown Category';
+  return category ? category.name : '';
+};
+
+const getFaviconUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=16`;
+  } catch {
+    return '';
+  }
+};
+
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+  }
 };
 
 const handleSearch = () => {

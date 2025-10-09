@@ -319,9 +319,7 @@ const router = useRouter()
 // Configure marked for better rendering
 marked.setOptions({
   breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false
+  gfm: true
 })
 
 // State
