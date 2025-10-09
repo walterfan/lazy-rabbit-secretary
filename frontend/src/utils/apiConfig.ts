@@ -72,5 +72,6 @@ if (isDevelopment) {
     environment: import.meta.env.MODE,
     isDevelopment,
     isProduction,
+    runtimeConfig: (window as any).__API_CONFIG__,
   });
 }

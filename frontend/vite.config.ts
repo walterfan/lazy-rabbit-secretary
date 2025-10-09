@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
           drop_console: mode === 'production',
           drop_debugger: mode === 'production'
         }
+      },
+      // Copy public files including config.js
+      rollupOptions: {
+        input: {
+          main: './index.html'
+        }
       }
     },
     css: {
