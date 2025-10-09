@@ -21,6 +21,8 @@ static_routes:
   public:
     - path: "/web"
       dir: "../frontend/dist"
+    - path: "/assets"
+      dir: "../frontend/dist/assets"
   private:
     - path: "/doc"
       dir: "../doc/build/html"

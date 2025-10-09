@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -162,15 +161,15 @@ func (thiz *WebApiService) Run() {
 	dailyService := daily.NewDailyService(database.GetDB())
 	daily.RegisterDailyRoutes(r, dailyService, authMiddleware)
 
-	// Default route for SPA
+	// Setup static routes BEFORE the SPA fallback
+	thiz.setupPublicRoutes(r)
+	thiz.setupPrivateRoutes(r)
+
+	// Default route for SPA (must be last)
 	r.NoRoute(func(ctx *gin.Context) {
 		frontendPath := viper.GetString("server.webroot")
 		ctx.File(frontendPath)
 	})
-
-	thiz.setupPublicRoutes(r)
-
-	thiz.setupPrivateRoutes(r)
 
 	// Run the server
 	thiz.startServer(r)
@@ -381,36 +380,53 @@ func (thiz *WebApiService) setupPublicRoutes(r *gin.Engine) {
 		)
 	}
 
-	// Ensure /assets is served when server.webroot is configured but assets route is missing
-	webroot := viper.GetString("server.webroot")
-	if webroot != "" {
-		distDir := filepath.Dir(webroot)
-		assetsDir := filepath.Join(distDir, "assets")
-		if info, err := os.Stat(assetsDir); err == nil && info.IsDir() {
-			missing := true
-			for _, route := range publicRoutes {
-				if route.Path == "/assets" {
-					missing = false
-					break
-				}
-			}
-			if missing {
-				publicRoutes = append(publicRoutes, StaticRoute{Path: "/assets", Dir: assetsDir})
-				thiz.logger.Info("Auto-registered assets static route",
-					zap.String("path", "/assets"),
-					zap.String("dir", assetsDir),
-				)
-			}
-		}
-	}
-
+	// Register static routes with custom MIME type handling
 	for _, route := range publicRoutes {
-		r.Static(route.Path, route.Dir)
+		if route.Path == "/assets" {
+			// Use custom handler for assets to ensure correct MIME types
+			r.StaticFS(route.Path, gin.Dir(route.Dir, false))
+		} else {
+			r.Static(route.Path, route.Dir)
+		}
 		thiz.logger.Info("Registered public route",
 			zap.String("path", route.Path),
 			zap.String("dir", route.Dir),
 		)
 	}
+
+	// Add middleware to set correct MIME types for asset files
+	r.Use(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Set correct MIME types for asset files
+		if strings.HasPrefix(path, "/assets/") {
+			if strings.HasSuffix(path, ".js") {
+				c.Header("Content-Type", "application/javascript; charset=utf-8")
+			} else if strings.HasSuffix(path, ".css") {
+				c.Header("Content-Type", "text/css; charset=utf-8")
+			} else if strings.HasSuffix(path, ".map") {
+				c.Header("Content-Type", "application/json; charset=utf-8")
+			} else if strings.HasSuffix(path, ".png") {
+				c.Header("Content-Type", "image/png")
+			} else if strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".jpeg") {
+				c.Header("Content-Type", "image/jpeg")
+			} else if strings.HasSuffix(path, ".gif") {
+				c.Header("Content-Type", "image/gif")
+			} else if strings.HasSuffix(path, ".svg") {
+				c.Header("Content-Type", "image/svg+xml; charset=utf-8")
+			} else if strings.HasSuffix(path, ".woff") {
+				c.Header("Content-Type", "font/woff")
+			} else if strings.HasSuffix(path, ".woff2") {
+				c.Header("Content-Type", "font/woff2")
+			} else if strings.HasSuffix(path, ".ttf") {
+				c.Header("Content-Type", "font/ttf")
+			} else if strings.HasSuffix(path, ".eot") {
+				c.Header("Content-Type", "application/vnd.ms-fontobject")
+			}
+		}
+
+		c.Next()
+	})
 }
 
 func (thiz *WebApiService) setupPrivateRoutes(r *gin.Engine) {
