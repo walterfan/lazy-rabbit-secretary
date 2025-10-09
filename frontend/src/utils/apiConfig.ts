@@ -4,13 +4,19 @@
  */
 
 /**
- * Get the API base URL from environment variables
+ * Get the API base URL from environment variables or runtime config
  * Falls back to development defaults if not configured
  */
 export function getApiBaseUrl(): string {
-  // Check for explicit base URL first
+  // Check for explicit base URL first (build-time)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  // Check for runtime configuration (can be set after build)
+  const runtimeConfig = (window as any).__API_CONFIG__;
+  if (runtimeConfig?.baseUrl) {
+    return runtimeConfig.baseUrl;
   }
 
   // Build URL from components if available
